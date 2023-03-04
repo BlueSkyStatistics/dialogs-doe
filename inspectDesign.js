@@ -74,7 +74,7 @@ class inspectDesign extends baseModal {
 					}  
 				} else
 				{
-					BSkyFormat("Not a design class - The requested opearation cannot be performed")
+					BSkyFormat("Not a design class - The requested operation cannot be performed")
 				}
 
                 `

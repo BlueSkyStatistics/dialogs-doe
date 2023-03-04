@@ -33,7 +33,7 @@ var localization = {
 		IAPlotShowAliasChk: "Show aliases in the plot",
 		
 		cubePlotChk: "Cube plot of three factor interactions with modeled means",
-		cubePlotModelMeanChk: "Plot both modeled means and no modeled means",
+		cubePlotModelMeanChk: "Plot both modeled means and non-modeled means",
 		cubePlotIndependent: "Select three independent variable(s) for the cube plot",
 		
         help: {
