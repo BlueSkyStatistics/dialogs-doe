@@ -1,7 +1,7 @@
 var localization = {
     en: {
         title: "A quick overview of the Design of Experiments (DoE) functionality",
-        navigation: "DoE Overivew",
+        navigation: "DoE Overview",
 
         lbl1 : " 1. To create any Design under DOE -> create design menu, first you need a dataset with factor details to create the design from", 
 		lbl2 : " 2. To get started, choose one of the sample datasets (excel file) provided in the sample dataset directory in your BlueSky Statistics install directory or you can create a factor detail table/dataset on the fly with DOE -> Create DoE Factor Details menu",
