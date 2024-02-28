@@ -5,7 +5,6 @@
     "keywords": [],
     "main": "nav.js",
     "version": "1.0.4",
-	"minBSkyVersion":"8.93",
     "author": "BlueSky Statistics",
     "scripts": {},
     "dependencies": {
