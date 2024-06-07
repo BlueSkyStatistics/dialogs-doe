@@ -1,7 +1,7 @@
 var localization = {
     en: {
-        title: "Auto generate factor details that can be used to create a Design of Experiment",
-        navigation: "Create DoE factor details",
+        title: "Auto generate factor (equal size) details for a DoE study",
+        navigation: "Factor Details (equal size)",
         datasetname: "Factor detail table name",
         numOfVars: "Number of factors",
         numOfFactorLevels: "Maximum number of levels among factors",

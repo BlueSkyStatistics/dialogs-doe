@@ -3,7 +3,15 @@ const nav = {
     "tab": "DoE",
     "buttons": [
         "./DoE overview",
-        "./createDoEFactorTable",
+        {
+            "name": "Create DoE Factor Table",
+            "icon": "icon-doe",
+            "children": [
+                "./createDoEFactorTable",
+                "./createDoEFactorTable2"
+            ]
+        },
+		
         "./importDesign",
         "./exportDesign",
 
