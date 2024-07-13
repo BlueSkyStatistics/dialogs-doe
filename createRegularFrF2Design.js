@@ -107,8 +107,11 @@ class createRegular2LevelDesign extends baseModal {
 				ncenter= {{selected.numOfCenterPts | safe}} , 
 				center.distribute = modified_center.distribute ,
 				MaxC2 = {{selected.maxC2radgp | safe}} , resolution = {{selected.roman | safe}} ,replications= {{selected.replications | safe}} , wbreps= {{selected.numOfBlocks | safe}}, 
-				repeat.only= {{selected.repeatOnlyChk | safe}} ,randomize= {{selected.randomizationChk | safe}} ,
-				seed= {{selected.randomseeds | safe}} , factor.names=factorParam$factor.names, select.catlg = selectedCatlg, design = designnamefromcatlg1 )
+				repeat.only= {{selected.repeatOnlyChk | safe}} ,randomize= {{selected.randomizationChk | safe}} , 
+				{{if(options.selected.randomseeds !== "")}} 
+				seed= {{selected.randomseeds | safe}},
+				{{/if}}
+				factor.names=factorParam$factor.names, select.catlg = selectedCatlg, design = designnamefromcatlg1 )
 				 
             BSkyLoadRefresh('{{selected.datasetname | safe}}') 
 
@@ -203,11 +206,12 @@ class createRegular2LevelDesign extends baseModal {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
                     label: localization.en.randomseeds,
-                    required: true,
-                    min: 1,
+                    //required: true,
+                   // min: 1,
                     max: 9999,
                     step: 1,
-                    value: 1234,
+                    value: "",
+					style: "ml-5",
                 })
             },     
             roman: {
@@ -261,8 +265,8 @@ class createRegular2LevelDesign extends baseModal {
 				el: new checkbox(config, { 
 					label: localization.en.randomizationChk, 
 					no: "randomizationChk", 
-					style: "ml-5", 
-					//state: "checked", 
+					//style: "ml-5", 
+					state: "checked", 
 					extraction: "Boolean", 
 					newline: false, 
 				}) 
@@ -292,7 +296,8 @@ class createRegular2LevelDesign extends baseModal {
                 objects.numOfCenterPts.el.content, objects.centerPointDistribution.el.content,
                 objects.replications.el.content, objects.repeatOnlyChk.el.content,
                 objects.lbl1.el.content,
-                objects.randomseeds.el.content, objects.randomizationChk.el.content,
+                objects.randomizationChk.el.content,
+				objects.randomseeds.el.content, 
                 objects.lbldesignheading.el.content,
                 objects.lbl2.el.content, objects.roman.el.content,
                 objects.marad.el.content,objects.maxC2rad.el.content,

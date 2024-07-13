@@ -46,7 +46,10 @@ class createFullFactorialDesign extends baseModal {
 			factorParam$factor.names[] = lapply(factorParam$factor.names, function(x) type.convert(as.character(x), as.is = TRUE))
 
             {{selected.datasetname | safe}} <- DoE.base::fac.design(nfactors = factorParam$nfactors ,replications= {{selected.replications | safe}} ,repeat.only= {{selected.repeatOnlyChk | safe}} ,
-                blocks= {{selected.numOfBlocks | safe}} ,randomize= {{selected.randomizationChk | safe}} ,seed= {{selected.randomseeds | safe}},
+                blocks= {{selected.numOfBlocks | safe}} ,randomize= {{selected.randomizationChk | safe}} ,
+				{{if(options.selected.randomseeds !== "")}} 
+				seed= {{selected.randomseeds | safe}},
+				{{/if}}
                 nlevels = factorParam$nlevels, 
                 factor.names = factorParam$factor.names )
 				
@@ -110,11 +113,12 @@ class createFullFactorialDesign extends baseModal {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
                     label: localization.en.randomseeds,
-                    required: true,
-                    min: 1,
+                    //required: true,
+                    //min: 1,
                     max: 9999,
                     step: 1,
-                    value: 1234,
+                    value: "",
+					style: "ml-5",
                 })
             },            
             // lblheading: { el: new labelVar(config, { label: localization.en.lblheading, style: "mt-3",h: 5 }) },
@@ -124,8 +128,8 @@ class createFullFactorialDesign extends baseModal {
 				el: new checkbox(config, { 
 					label: localization.en.randomizationChk, 
 					no: "randomizationChk", 
-					//state:"checked", 
-					style: "ml-4 mt-1 mb-1", 
+					state:"checked", 
+					//style: "ml-4 mt-1 mb-1", 
 					extraction: "Boolean", 
 					newline: false 
 				}) 
@@ -137,7 +141,8 @@ class createFullFactorialDesign extends baseModal {
                 objects.numOfBlocks.el.content, 
                 objects.replications.el.content, objects.repeatOnlyChk.el.content,
                 objects.lbl1.el.content,
-                objects.randomseeds.el.content, objects.randomizationChk.el.content],
+				objects.randomizationChk.el.content,
+                objects.randomseeds.el.content],
             nav: {
                 name: localization.en.navigation,
                 icon: "icon-sample",

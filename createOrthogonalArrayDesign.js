@@ -64,22 +64,34 @@ class createOrthogonalArrayDesign extends baseModal {
 			if(is.null(designnamefromcatlg1) && is.null(num_runs)){
 				{{selected.datasetname | safe}} <- DoE.base::oa.design(ID= NULL ,nruns= NULL ,nfactors= factorParam$nfactors ,replications= {{selected.replications | safe}} ,
                     repeat.only= {{selected.repeatOnlyChk | safe}} ,randomize= {{selected.randomizationChk | safe}} ,
-                    seed= {{selected.randomseeds | safe}} ,nlevels=factorParam$nlevels,
+					{{if(options.selected.randomseeds !== "")}} 
+					seed= {{selected.randomseeds | safe}},
+					{{/if}}
+					nlevels=factorParam$nlevels,
                     factor.names=factorParam$factor.names , columns = '{{selected.columnOptimization | safe}}' , min.residual.df= {{selected.minNumOfResidual | safe}} )
 			}else if(is.null(designnamefromcatlg1)){
 				{{selected.datasetname | safe}} <- DoE.base::oa.design(ID= NULL ,nruns= num_runs ,nfactors= factorParam$nfactors ,replications= {{selected.replications | safe}} ,
                     repeat.only= {{selected.repeatOnlyChk | safe}} ,randomize= {{selected.randomizationChk | safe}} ,
-                    seed= {{selected.randomseeds | safe}} ,nlevels=factorParam$nlevels,
+					{{if(options.selected.randomseeds !== "")}} 
+					seed= {{selected.randomseeds | safe}},
+					{{/if}}
+					nlevels=factorParam$nlevels,
                     factor.names=factorParam$factor.names , columns = '{{selected.columnOptimization | safe}}' , min.residual.df= {{selected.minNumOfResidual | safe}} )
 			}else if(is.null(num_runs)){
 				{{selected.datasetname | safe}} <- DoE.base::oa.design(ID= {{selected.designnamefromcatlg | safe}} ,nruns= NULL ,nfactors= factorParam$nfactors ,replications= {{selected.replications | safe}} ,
                     repeat.only= {{selected.repeatOnlyChk | safe}} ,randomize= {{selected.randomizationChk | safe}} ,
-                    seed= {{selected.randomseeds | safe}} ,nlevels=factorParam$nlevels,
+					{{if(options.selected.randomseeds !== "")}} 
+					seed= {{selected.randomseeds | safe}},
+					{{/if}}
+					nlevels=factorParam$nlevels,
                     factor.names=factorParam$factor.names , columns = '{{selected.columnOptimization | safe}}' , min.residual.df= {{selected.minNumOfResidual | safe}} )
 			}else{
 				{{selected.datasetname | safe}} <- DoE.base::oa.design(ID= {{selected.designnamefromcatlg | safe}} ,nruns= num_runs ,nfactors= factorParam$nfactors ,replications= {{selected.replications | safe}} ,
                     repeat.only= {{selected.repeatOnlyChk | safe}} ,randomize= {{selected.randomizationChk | safe}} ,
-                    seed= {{selected.randomseeds | safe}} ,nlevels=factorParam$nlevels,
+					{{if(options.selected.randomseeds !== "")}} 
+					seed= {{selected.randomseeds | safe}},
+					{{/if}}
+					nlevels=factorParam$nlevels,
                     factor.names=factorParam$factor.names , columns = '{{selected.columnOptimization | safe}}' , min.residual.df= {{selected.minNumOfResidual | safe}} )
 			}
             			 
@@ -148,11 +160,12 @@ class createOrthogonalArrayDesign extends baseModal {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
                     label: localization.en.randomseeds,
-                    required: true,
-                    min: 1,
+                    //required: true,
+                    //min: 1,
                     max: 99999,
                     step: 1,
-                    value: 1234,
+                    value: "",
+					style: "ml-5",
                 })
             },  
 			designnamefromcatlg: {
@@ -185,8 +198,8 @@ class createOrthogonalArrayDesign extends baseModal {
 				el: new checkbox(config, { 
 					label: localization.en.randomizationChk, 
 					no: "randomizationChk", 
-					style: "ml-5", 
-					//state: "checked", 
+					//style: "ml-5", 
+					state: "checked", 
 					extraction: "Boolean", 
 					newline: false 
 				}) 
@@ -199,7 +212,8 @@ class createOrthogonalArrayDesign extends baseModal {
                 objects.minNumOfResidual.el.content, 
                 objects.replications.el.content, objects.repeatOnlyChk.el.content,
                 objects.lbl1.el.content,
-                objects.randomseeds.el.content, objects.randomizationChk.el.content,
+				objects.randomizationChk.el.content,
+                objects.randomseeds.el.content, 
 				objects.designnamefromcatlg.el.content,
 				objects.columnOptimization.el.content], 
             nav: {

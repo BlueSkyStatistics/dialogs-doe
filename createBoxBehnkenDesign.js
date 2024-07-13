@@ -49,7 +49,9 @@ class createBoxBehnkenDesign extends baseModal {
 										ncenter= {{selected.numCenter | safe}},
 										factor.names = factorParam$factor.names,
 										block.name = c('{{selected.blockName | safe}}'),
-										seed= {{selected.randomseeds | safe}}, 
+										{{if(options.selected.randomseeds !== "")}} 
+										seed= {{selected.randomseeds | safe}},
+										{{/if}} 
 										randomize = {{selected.randomizationChk| safe}})  
 										
 			
@@ -109,11 +111,12 @@ class createBoxBehnkenDesign extends baseModal {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
                     label: localization.en.randomseeds,
-                    required: true,
-                    min: 1,
+                    //required: true,
+                    //min: 1,
                     max: 99999,
                     step: 1,
-                    value: 1234,
+                    value: "",
+					style: "ml-5",
                 })
             },       
             lbl1: { 
@@ -128,9 +131,9 @@ class createBoxBehnkenDesign extends baseModal {
 					label: localization.en.randomizationChk, 
 					no: "randomizationChk", 
 					extraction: "Boolean",
-					//state: "checked",
+					state: "checked",
 					newline: true,
-					style: "ml-5",
+					//style: "ml-5",
 				}) 
 			},
         }
@@ -141,8 +144,9 @@ class createBoxBehnkenDesign extends baseModal {
                 objects.blockName.el.content, 
 				
 				objects.lbl1.el.content,
+				objects.randomizationChk.el.content,
                 objects.randomseeds.el.content,
-				objects.randomizationChk.el.content],
+				],
     
             nav: {
                 name: localization.en.navigation,

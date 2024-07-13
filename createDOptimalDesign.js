@@ -73,7 +73,10 @@ class createDOptimalDesign extends baseModal {
 				nlevels= factorParam$nlevels, factor.names=factorParam$factor.names,
 				digits=NULL, constraint=NULL, center=FALSE,
 				blocks={{selected.numOfBlocks | safe}}, block.name="{{selected.blockName | safe}}", wholeBlockData=NULL, qual=NULL,
-				randomize= {{selected.randomizationChk| safe}} ,seed= {{selected.randomseeds | safe}} )
+				{{if(options.selected.randomseeds !== "")}} 
+				seed= {{selected.randomseeds | safe}},
+				{{/if}}
+				randomize= {{selected.randomizationChk| safe}} ,
 				
 			  BSkyLoadRefresh('{{selected.datasetname | safe}}')  
 
@@ -182,11 +185,12 @@ class createDOptimalDesign extends baseModal {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
                     label: localization.en.randomseeds,
-                    required: true,
-                    min: 1,
+                    //required: true,
+                    //min: 1,
                     max: 99999,
                     step: 1,
-                    value: 1234,
+                    value: "",
+					style: "ml-5",
                 })
             },            
 			randomizationChk: { 
@@ -194,9 +198,9 @@ class createDOptimalDesign extends baseModal {
 					label: localization.en.randomizationChk, 
 					no: "randomizationChk", 
 					extraction: "Boolean", 
-					//state: "checked",
+					state: "checked",
 					newline: true,
-					style: "ml-5",
+					//style: "ml-5",
 				}) 
 			},
         }
@@ -212,8 +216,9 @@ class createDOptimalDesign extends baseModal {
 				objects.numOfBlocks.el.content,
 				objects.blockName.el.content,
                 objects.lbl1.el.content,
+				objects.randomizationChk.el.content,
                 objects.randomseeds.el.content, 
-				objects.randomizationChk.el.content],
+				],
             nav: {
                 name: localization.en.navigation,
                 icon: "icon-doe",

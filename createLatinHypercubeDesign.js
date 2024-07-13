@@ -50,7 +50,11 @@ class createLatinHypercubeDesign extends baseModal {
 			factorParam$factor.names[] = lapply(factorParam$factor.names, function(x) type.convert(as.character(x), as.is = TRUE))
 			
             {{selected.datasetname | safe}} <- DoE.wrapper::lhs.design( type= "{{selected.lhsDesignType | safe}}" , nruns= c({{selected.numOfRuns | safe}}) ,nfactors= factorParam$nfactors ,
-                digits= {{selected.numOfDeciPlaces | safe}} ,seed= {{selected.randomseeds | safe}} ,nlevels = factorParam$nlevels, randomize = {{selected.randomizationChk| safe}}, factor.names=factorParam$factor.names)
+                digits= {{selected.numOfDeciPlaces | safe}} ,
+				{{if(options.selected.randomseeds !== "")}} 
+				seed= {{selected.randomseeds | safe}},
+				{{/if}}
+				nlevels = factorParam$nlevels, randomize = {{selected.randomizationChk| safe}}, factor.names=factorParam$factor.names)
 
               BSkyLoadRefresh('{{selected.datasetname | safe}}')
 
@@ -109,11 +113,12 @@ class createLatinHypercubeDesign extends baseModal {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
                     label: localization.en.randomseeds,
-                    required: true,
-                    min: 1,
+                    //required: true,
+                    //min: 1,
                     max: 99999,
                     step: 1,
-                    value: 1234,
+                    value: "",
+					style: "ml-5",
                 })
             },       
             /* lhsDesignType: {
@@ -155,9 +160,9 @@ class createLatinHypercubeDesign extends baseModal {
 					label: localization.en.randomizationChk, 
 					no: "randomizationChk", 
 					extraction: "Boolean", 
-					//state: "checked",
+					state: "checked",
 					newline: true,
-					style: "ml-5",
+					//style: "ml-5",
 				}) 
 			},
         }
@@ -169,8 +174,9 @@ class createLatinHypercubeDesign extends baseModal {
                 objects.numOfDeciPlaces.el.content, 
 				
 				objects.lbl1.el.content,
-                objects.randomseeds.el.content,
+                
 				objects.randomizationChk.el.content,
+				objects.randomseeds.el.content,
      
                 objects.lhsDesignType.el.content],
             nav: {

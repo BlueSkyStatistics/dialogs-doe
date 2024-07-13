@@ -70,7 +70,10 @@ class create2LevelDesign extends baseModal {
 				center.distribute = modified_center.distribute ,
 				replications= {{selected.replications | safe}} ,
                 repeat.only= {{selected.repeatOnlyChk | safe}} ,randomize= {{selected.randomizationChk | safe}} ,
-                seed= {{selected.randomseeds | safe}} , factor.names= factorParam$factor.names)
+				{{if(options.selected.randomseeds !== "")}} 
+				seed= {{selected.randomseeds | safe}},
+				{{/if}}
+				factor.names= factorParam$factor.names)
  
               BSkyLoadRefresh('{{selected.datasetname | safe}}')
 
@@ -152,11 +155,11 @@ class create2LevelDesign extends baseModal {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
                     label: localization.en.randomseeds,
-                    required: true,
-                    min: 1,
+                    //required: true,
+                    //min: 1,
                     max: 9999,
                     step: 1,
-                    value: 1234,
+                    value: "",
 					style: "mt-1 mb-1",
                 })
             },            
@@ -170,8 +173,8 @@ class create2LevelDesign extends baseModal {
 				el: new checkbox(config, { 
 					label: localization.en.randomizationChk, 
 					no: "randomizationChk", 
-					//state:"checked", 
-					style: "ml-4 mt-1 mb-1", 
+					state:"checked", 
+					//style: "ml-4 mt-1 mb-1", 
 					extraction: "Boolean", 
 					newline: false,
 				}) 
@@ -184,7 +187,8 @@ class create2LevelDesign extends baseModal {
                 objects.numOfCenterPts.el.content, objects.centerPointDistribution.el.content,
                 objects.replications.el.content, objects.repeatOnlyChk.el.content,
                 objects.lbl1.el.content,
-                objects.randomseeds.el.content, objects.randomizationChk.el.content],
+				objects.randomizationChk.el.content,
+                objects.randomseeds.el.content],
             nav: {
                 name: localization.en.navigation,
                 icon: "icon-doe",
