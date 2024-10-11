@@ -1,36 +1,14 @@
-var localization = {
-    en: {
-        title: "Add centerpoint to a 2-level Design (quantitative) with no prior centerpoint) - the selected design is the active design on the dataset UI grid",
-        navigation: "Add centerpoint 2-level Design (Quantitative)",
-        
-        datasetname: "Modified Design name with centerpoints",
 
-        numOfCenterPts: "Number of center points (if used, must be minimum 2)",
-		centerPointDistribution: "Number of positions for center point distribution (must be >1)",
-		
-		help: {
-            title: "Add centerpoint to a 2-level Design (with no prior centerpoint)",
-            r_help: "help(add.center, package = FrF2)",
-			body: `
-				<b>Description</b></br>
-				add.center function to add center points to a 2-level fractional factorial design. All factors must be quantitative 
-				<br/>
-				<br/>
-				For the detail help - use R help(add.center, package = FrF2)
-				<br/>
-				
-			`
-		},
-		
-    }
-}
 
 
 class addCenterpoint2LevelDesign extends baseModal {
+    static dialogId = 'addCenterpoint2LevelDesign'
+    static t = baseModal.makeT(addCenterpoint2LevelDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "addCenterpoint2LevelDesign",
-            label: localization.en.title,
+            id: addCenterpoint2LevelDesign.dialogId,
+            label: addCenterpoint2LevelDesign.t('title'),
             modalType: "one",
             RCode: `
             require(DoE.base)
@@ -65,7 +43,7 @@ class addCenterpoint2LevelDesign extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: localization.en.datasetname,
+                    label: addCenterpoint2LevelDesign.t('datasetname'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -78,7 +56,7 @@ class addCenterpoint2LevelDesign extends baseModal {
             numOfCenterPts: {
                 el: new inputSpinner(config, {
                     no: 'numOfCenterPts',
-                    label: localization.en.numOfCenterPts,
+                    label: addCenterpoint2LevelDesign.t('numOfCenterPts'),
                     required: true,
                     min: 0,
                     max: 9999,
@@ -91,7 +69,7 @@ class addCenterpoint2LevelDesign extends baseModal {
 			centerPointDistribution: {
                 el: new inputSpinner(config, {
                     no: 'centerPointDistribution',
-                    label: localization.en.centerPointDistribution,
+                    label: addCenterpoint2LevelDesign.t('centerPointDistribution'),
                     required: true,
                     min: 0,
                     max: 9999,
@@ -106,14 +84,23 @@ class addCenterpoint2LevelDesign extends baseModal {
             items: [ objects.datasetname.el.content,
                 objects.numOfCenterPts.el.content, objects.centerPointDistribution.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: addCenterpoint2LevelDesign.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: addCenterpoint2LevelDesign.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: addCenterpoint2LevelDesign.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new addCenterpoint2LevelDesign().render()
+
+module.exports = {
+    render: () => new addCenterpoint2LevelDesign().render()
+}

@@ -1,42 +1,13 @@
-var localization = {
-    en: {
-        title: "Create Full Factorial Design",
-        navigation: "Create Full Factorial Design",
-        datasetname: "Design name",
-        selectedvars: "Select variables",
 
-        numOfBlocks: "Number of blocks",
-        replications: "Replications",
-        repeatOnlyChk:"Repeat only",
-
-        lbl1 : "You may not need to change the randomization settings",
-        randomseeds : "Seed for randomization",
-        randomizationChk:"Randomize the design generation",
-		
-		help: {
-            title: "Create Full Factorial Design",
-            r_help: "help(fac.design, package = DoE.base)",
-			body: `
-				<b>Description</b></br>
-				fac.design function to generate full factorial designs
-				<br/>
-				<br/>
-				For the detail help - use R help(fac.design, package = DoE.base)
-				<br/>
-				<br/>
-				To try this, you may use the sample dataset file called factor_grid_full_factorial_Design.xlsx. Open the file in the data grid with file open menu
-				<br/>
-			`
-		},
-
-    }
-}
 
 class createFullFactorialDesign extends baseModal {
+    static dialogId = 'createFullFactorialDesign'
+    static t = baseModal.makeT(createFullFactorialDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "createFullFactorialDesign",
-            label: localization.en.title,
+            id: createFullFactorialDesign.dialogId,
+            label: createFullFactorialDesign.t('title'),
             modalType: "two",
             RCode: `
             require(DoE.base)
@@ -68,7 +39,7 @@ class createFullFactorialDesign extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: localization.en.datasetname,
+                    label: createFullFactorialDesign.t('datasetname'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -79,7 +50,7 @@ class createFullFactorialDesign extends baseModal {
             },
             selectedvars: {
                 el: new dstVariableList(config, {
-                    label: localization.en.selectedvars,
+                    label: createFullFactorialDesign.t('selectedvars'),
                     no: "selectedvars",
                     filter: "String|Numeric|Date|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma|Enclosed",
@@ -90,7 +61,7 @@ class createFullFactorialDesign extends baseModal {
             numOfBlocks: {
                 el: new inputSpinner(config, {
                     no: 'numOfBlocks',
-                    label: localization.en.numOfBlocks,
+                    label: createFullFactorialDesign.t('numOfBlocks'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -101,7 +72,7 @@ class createFullFactorialDesign extends baseModal {
             replications: {
                 el: new inputSpinner(config, {
                     no: 'replications',
-                    label: localization.en.replications,
+                    label: createFullFactorialDesign.t('replications'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -112,7 +83,7 @@ class createFullFactorialDesign extends baseModal {
             randomseeds: {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
-                    label: localization.en.randomseeds,
+                    label: createFullFactorialDesign.t('randomseeds'),
                     //required: true,
                     //min: 1,
                     max: 9999,
@@ -121,12 +92,12 @@ class createFullFactorialDesign extends baseModal {
 					style: "ml-5",
                 })
             },            
-            // lblheading: { el: new labelVar(config, { label: localization.en.lblheading, style: "mt-3",h: 5 }) },
-            lbl1: { el: new labelVar(config, { label: localization.en.lbl1, style: "mt-3", h:6 }) },
-            repeatOnlyChk: { el: new checkbox(config, { label: localization.en.repeatOnlyChk, no: "repeatOnlyChk", style: "ml-4 mt-1 mb-1", extraction: "Boolean", newline: false }) },
+            // lblheading: { el: new labelVar(config, { label: createFullFactorialDesign.t('lblheading'), style: "mt-3",h: 5 }) },
+            lbl1: { el: new labelVar(config, { label: createFullFactorialDesign.t('lbl1'), style: "mt-3", h:6 }) },
+            repeatOnlyChk: { el: new checkbox(config, { label: createFullFactorialDesign.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ml-4 mt-1 mb-1", extraction: "Boolean", newline: false }) },
             randomizationChk: { 
 				el: new checkbox(config, { 
-					label: localization.en.randomizationChk, 
+					label: createFullFactorialDesign.t('randomizationChk'), 
 					no: "randomizationChk", 
 					state:"checked", 
 					//style: "ml-4 mt-1 mb-1", 
@@ -144,14 +115,23 @@ class createFullFactorialDesign extends baseModal {
 				objects.randomizationChk.el.content,
                 objects.randomseeds.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: createFullFactorialDesign.t('navigation'),
                 icon: "icon-sample",
                 datasetRequired: false,
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: createFullFactorialDesign.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: createFullFactorialDesign.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new createFullFactorialDesign().render()
+
+module.exports = {
+    render: () => new createFullFactorialDesign().render()
+}

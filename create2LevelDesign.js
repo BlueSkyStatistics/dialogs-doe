@@ -1,48 +1,14 @@
-var localization = {
-    en: {
-        title: "Create non-regular (Fractional) Factorial 2-level Screening Design",
-        navigation: "Create 2-level Screening Design",
-        selectedvars: "Select variables",
-        datasetname: "Design name",
 
-        // lblheading: "Size and randomization",
-        numOfRuns: "Number of runs (multiple of 4, >=8)",
-        taguchiOrderChk:"(Only relevant for) 12 run design in Taguchi order",
-
-        numOfCenterPts: "Number of center points (if used, have minimum 2)",
-		centerPointDistribution: "Number of positions for center point distribution (have >1)",
-		
-        replications: "Replications",
-        repeatOnlyChk:"Repeat only",
-
-        lbl1 : "You may not need to change the randomization settings",
-        randomseeds : "Seed for randomization",
-        randomizationChk:"Randomize the design generation",
-		
-		help: {
-            title: "Create 2-level Screening Design",
-            r_help: "help(pb, package = FrF2)",
-			body: `
-				<b>Description</b></br>
-				Plackett-Burman(pb) function to generate non-regular fractional factorial 2-level screening designs
-				<br/>
-				<br/>
-				For the detail help - use R help(pb, package = FrF2)
-				<br/>
-				<br/>
-				To try this, you may use the sample dataset file called factor_grid_twolevel_screen_Design.xlsx. Open the file in the data grid with file open menu
-				<br/>
-			`
-		},
-    }
-}
 
 
 class create2LevelDesign extends baseModal {
+    static dialogId = 'create2LevelDesign'
+    static t = baseModal.makeT(create2LevelDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "create2LevelDesign",
-            label: localization.en.title,
+            id: create2LevelDesign.dialogId,
+            label: create2LevelDesign.t('title'),
             modalType: "two",
             RCode: `
             require(DoE.base)
@@ -85,7 +51,7 @@ class create2LevelDesign extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: localization.en.datasetname,
+                    label: create2LevelDesign.t('datasetname'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -97,7 +63,7 @@ class create2LevelDesign extends baseModal {
             selectedvars: {
                 el: new dstVariableList(config, {
 					no: "selectedvars",
-                    label: localization.en.selectedvars,
+                    label: create2LevelDesign.t('selectedvars'),
                     filter: "String|Numeric|Date|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma|Enclosed",                    
                     required: true,
@@ -106,7 +72,7 @@ class create2LevelDesign extends baseModal {
             numOfRuns: {
                 el: new inputSpinner(config, {
                     no: 'numOfRuns',
-                    label: localization.en.numOfRuns,
+                    label: create2LevelDesign.t('numOfRuns'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -118,7 +84,7 @@ class create2LevelDesign extends baseModal {
             numOfCenterPts: {
                 el: new inputSpinner(config, {
                     no: 'numOfCenterPts',
-                    label: localization.en.numOfCenterPts,
+                    label: create2LevelDesign.t('numOfCenterPts'),
                     required: true,
                     min: 0,
                     max: 9999,
@@ -130,7 +96,7 @@ class create2LevelDesign extends baseModal {
 			centerPointDistribution: {
                 el: new inputSpinner(config, {
                     no: 'centerPointDistribution',
-                    label: localization.en.centerPointDistribution,
+                    label: create2LevelDesign.t('centerPointDistribution'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -142,7 +108,7 @@ class create2LevelDesign extends baseModal {
             replications: {
                 el: new inputSpinner(config, {
                     no: 'replications',
-                    label: localization.en.replications,
+                    label: create2LevelDesign.t('replications'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -154,7 +120,7 @@ class create2LevelDesign extends baseModal {
             randomseeds: {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
-                    label: localization.en.randomseeds,
+                    label: create2LevelDesign.t('randomseeds'),
                     //required: true,
                     //min: 1,
                     max: 9999,
@@ -164,14 +130,14 @@ class create2LevelDesign extends baseModal {
                 })
             },            
             
-			// lblheading: { el: new labelVar(config, { label: localization.en.lblheading, style: "mt-3",h: 5 }) },
-            lbl1: { el: new labelVar(config, { label: localization.en.lbl1, style: "mt-3", h:6 }) },
-            taguchiOrderChk: { el: new checkbox(config, { label: localization.en.taguchiOrderChk, no: "taguchiOrderChk",  style: "ml-4 mt-1 mb-2", extraction: "Boolean", newline: true }) },
-            repeatOnlyChk: { el: new checkbox(config, { label: localization.en.repeatOnlyChk, no: "repeatOnlyChk", style: "ml-4 mt-1 mb-1", extraction: "Boolean", newline: false }) },
+			// lblheading: { el: new labelVar(config, { label: create2LevelDesign.t('lblheading'), style: "mt-3",h: 5 }) },
+            lbl1: { el: new labelVar(config, { label: create2LevelDesign.t('lbl1'), style: "mt-3", h:6 }) },
+            taguchiOrderChk: { el: new checkbox(config, { label: create2LevelDesign.t('taguchiOrderChk'), no: "taguchiOrderChk",  style: "ml-4 mt-1 mb-2", extraction: "Boolean", newline: true }) },
+            repeatOnlyChk: { el: new checkbox(config, { label: create2LevelDesign.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ml-4 mt-1 mb-1", extraction: "Boolean", newline: false }) },
             
 			randomizationChk: { 
 				el: new checkbox(config, { 
-					label: localization.en.randomizationChk, 
+					label: create2LevelDesign.t('randomizationChk'), 
 					no: "randomizationChk", 
 					state:"checked", 
 					//style: "ml-4 mt-1 mb-1", 
@@ -190,14 +156,23 @@ class create2LevelDesign extends baseModal {
 				objects.randomizationChk.el.content,
                 objects.randomseeds.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: create2LevelDesign.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: create2LevelDesign.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: create2LevelDesign.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new create2LevelDesign().render()
+
+module.exports = {
+    render: () => new create2LevelDesign().render()
+}

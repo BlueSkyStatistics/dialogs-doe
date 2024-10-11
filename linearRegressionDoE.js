@@ -1,92 +1,15 @@
 
-var localization = {
-    en: {
-        title: "Design of Experiments analysis with Linear Model",
-        navigation: "Design Analysis - Linear Model",
-		
-        modelname: "Enter Model Name",
-		
-        dependent: "Response (dependent) variable",
-        independent: "Independent variable(s)",
-		nointercept: "Ignore intercept (if checked, then do not check the specific options below for the 2-level Factor Design)",
-		degree: "Degree (leave it blank or type 2 for the linear model with main effects and 2-factor interactions)",
-		
-		effectsplot:"All effects plot (generated only when Degree is not specified)",
 
-        generateplotchk: "Plot residuals vs fitted, normal Q-Q , scale-location and residuals vs leverage",
-
-        weights: "Specify a variable with weights",
-		
-		twoLevelDesignTypeChk: "The following options are only applicable for a 2-level Factor Design (e.g. pb, FrF2, ..) - also do not check this if Ignore intercept option is checked above",
-		
-		AliasChk: "Determine aliases",
-		AliasCodedChk: "Coded aliases",
-		
-		DanielplotChk: "Daniel Plot (plot of effects)",
-		DanielplotCodeChk: "Coded label",
-		DanielplotHalfChk: "Half Normal",
-		DanielplotAlpha: "Alpha (significance level for labelling)",
-		
-		MEPlotChk: "MEPlot(main effects plots)",
-		
-		IAPlotChk: "IAPlot(interaction plots)",
-		IAPlotShowAliasChk: "Show aliases in the plot",
-		
-		cubePlotChk: "Cube plot of three factor interactions with modeled means",
-		cubePlotModelMeanChk: "Plot both modeled means and non-modeled means",
-		cubePlotIndependent: "Select three independent variable(s) for the cube plot",
-		
-        help: {
-            title: "Design of Experiments analysis with Linear Model",
-            r_help: "help(lm, package = 'stats')",
-            body: `
-				<b>Description</b></br>
-				Builds a linear regression model for the design to analyze the response (i.e. the results recorded/collected from the experiments). Internally calls function lm in stats package. Displays a summary of the model, coefficient table, Anova table and sum of squares table and plots the following  residuals vs. fitted, normal Q-Q, theoretical quantiles, residuals vs. leverage. You can optionally specify a variable with weights and choose to ignore the intercept.
-				<br/>
-				<br/>
-				For more details, see R help for the following
-				<br/>
-				help(lm, package = stats)
-				<br/>
-				help(anova, package = stats)
-				<br/>
-				help(allEffects, package = effects)
-				<br/>
-				help(aliases , package = FrF2)
-				<br/>
-				help(DanielPlot, package = FrF2)
-				<br/>
-				help(MEPlot, package = FrF2)
-				<br/>
-				help(IAPlot, package = FrF2)
-				<br/>
-				help(cubePlot, package = FrF2)
-				<br/>
-				<br/>
-				<b>Usage</b>
-				<br/>
-				<code> 
-				LinearRegModel1 <- lm(depVar~indepVars, dataset)​<br/>
-				#Summarizing the model<br/>
-				summary(LinearRegModel1)<br/>
-				#Displaying the Anova table<br/>
-				anova(LinearRegModel1)<br/>
-				#Plots residuals vs. fitted, normal Q-Q, scale-location, residuals vs. leverage<br/>
-				plot(effects::allEffects(LinearRegModel1))<br/>
-				plot(LinearRegModel1)<br/>
-                </code> <br/>
-
-			`
-		}
-    }
-}
 
 
 class linearRegressionDoE extends baseModal {
+    static dialogId = 'linearRegressionDoE'
+    static t = baseModal.makeT(linearRegressionDoE.dialogId)
+
     constructor() {
         var config = {
-            id: "linearRegressionDoE",
-            label: localization.en.title,
+            id: linearRegressionDoE.dialogId,
+            label: linearRegressionDoE.t('title'),
             modalType: "two",
             RCode: `
 
@@ -199,7 +122,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             modelname: {
                 el: new input(config, {
                     no: 'modelname',
-                    label: localization.en.modelname,
+                    label: linearRegressionDoE.t('modelname'),
                     placeholder: "",
                     required: true,
                     type: "character",
@@ -210,7 +133,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },
             dependent: {
                 el: new dstVariable(config, {
-                    label: localization.en.dependent,
+                    label: linearRegressionDoE.t('dependent'),
                     no: "dependent",
                     filter: "Numeric|Scale",
                     extraction: "NoPrefix|UseComma",
@@ -219,7 +142,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },
             independent: {
                 el: new dstVariableList(config, {
-                    label: localization.en.independent,
+                    label: linearRegressionDoE.t('independent'),
                     no: "independent",
                     required: true,
                     filter: "String|Numeric|Logical|Ordinal|Nominal|Scale",
@@ -229,7 +152,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             degree: {
                 el: new input(config, {
                     no: 'degree',
-                    label: localization.en.degree,
+                    label: linearRegressionDoE.t('degree'),
                     placeholder: "",
                     allow_spaces:true,
                     type: "numeric",
@@ -241,7 +164,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },            
             nointercept: {
                 el: new checkbox(config, {
-                    label: localization.en.nointercept,
+                    label: linearRegressionDoE.t('nointercept'),
                     no: "nointercept",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
@@ -252,7 +175,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },
 			effectsplot: {
                 el: new checkbox(config, {
-                    label: localization.en.effectsplot,
+                    label: linearRegressionDoE.t('effectsplot'),
                     no: "effectsplot",
                     style: "mt-2 mb-1",
                     bs_type: "valuebox",
@@ -264,7 +187,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },     		
 			generateplotchk: {
                 el: new checkbox(config, {
-                    label: localization.en.generateplotchk,
+                    label: linearRegressionDoE.t('generateplotchk'),
                     no: "generateplotchk",
                     style: "mt-2 mb-3",
                     bs_type: "valuebox",
@@ -276,7 +199,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },
 			weights: {
                 el: new dstVariable(config, {
-                    label: localization.en.weights,
+                    label: linearRegressionDoE.t('weights'),
                     no: "weights",
                     filter: "String|Numeric|Date|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma",
@@ -284,7 +207,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },
 			twoLevelDesignTypeChk: {
                 el: new checkbox(config, {
-                    label: localization.en.twoLevelDesignTypeChk,
+                    label: linearRegressionDoE.t('twoLevelDesignTypeChk'),
                     no: "twoLevelDesignTypeChk",
                     style: "mt-2",
                     bs_type: "valuebox",
@@ -296,7 +219,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },  
 			AliasChk: {
                 el: new checkbox(config, {
-                    label: localization.en.AliasChk,
+                    label: linearRegressionDoE.t('AliasChk'),
                     no: "AliasChk",
                     style: "ml-4 mt-2",
                     bs_type: "valuebox",
@@ -308,7 +231,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },  
 			AliasCodedChk: {
                 el: new checkbox(config, {
-                    label: localization.en.AliasCodedChk,
+                    label: linearRegressionDoE.t('AliasCodedChk'),
                     no: "AliasCodedChk",
                     style: "ml-5 mb-2",
                     bs_type: "valuebox",
@@ -320,7 +243,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },       
 			DanielplotChk: {
                 el: new checkbox(config, {
-                    label: localization.en.DanielplotChk,
+                    label: linearRegressionDoE.t('DanielplotChk'),
                     no: "DanielplotChk",
                     style: "ml-4 mt-2",
                     bs_type: "valuebox",
@@ -332,7 +255,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },  
 			DanielplotCodeChk: {
                 el: new checkbox(config, {
-                    label: localization.en.DanielplotCodeChk,
+                    label: linearRegressionDoE.t('DanielplotCodeChk'),
                     no: "DanielplotCodeChk",
                     style: "ml-5",
                     bs_type: "valuebox",
@@ -344,7 +267,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },    
 			DanielplotHalfChk: {
                 el: new checkbox(config, {
-                    label: localization.en.DanielplotHalfChk,
+                    label: linearRegressionDoE.t('DanielplotHalfChk'),
                     no: "DanielplotHalfChk",
                     style: "ml-5",
                     bs_type: "valuebox",
@@ -357,7 +280,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
 			DanielplotAlpha: {
                 el: new input(config, {
                     no: 'DanielplotAlpha',
-                    label: localization.en.DanielplotAlpha,
+                    label: linearRegressionDoE.t('DanielplotAlpha'),
                     placeholder: "",
                     allow_spaces:true,
                     type: "numeric",
@@ -370,7 +293,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },     
 			MEPlotChk: {
                 el: new checkbox(config, {
-                    label: localization.en.MEPlotChk,
+                    label: linearRegressionDoE.t('MEPlotChk'),
                     no: "MEPlotChk",
                     style: "ml-4 mb-2",
                     bs_type: "valuebox",
@@ -382,7 +305,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },  
 			IAPlotChk: {
                 el: new checkbox(config, {
-                    label: localization.en.IAPlotChk,
+                    label: linearRegressionDoE.t('IAPlotChk'),
                     no: "IAPlotChk",
                     style: "ml-4 mt-2",
                     bs_type: "valuebox",
@@ -394,7 +317,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },  
 			IAPlotShowAliasChk: {
                 el: new checkbox(config, {
-                    label: localization.en.IAPlotShowAliasChk,
+                    label: linearRegressionDoE.t('IAPlotShowAliasChk'),
                     no: "IAPlotShowAliasChk",
                     style: "ml-5 mb-2",
                     bs_type: "valuebox",
@@ -406,7 +329,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             },  
 			cubePlotChk: {
                 el: new checkbox(config, {
-                    label: localization.en.cubePlotChk,
+                    label: linearRegressionDoE.t('cubePlotChk'),
                     no: "cubePlotChk",
                     style: "ml-4 mt-2 mb-1",
                     bs_type: "valuebox",
@@ -418,7 +341,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             }, 
 			cubePlotModelMeanChk: {
                 el: new checkbox(config, {
-                    label: localization.en.cubePlotModelMeanChk,
+                    label: linearRegressionDoE.t('cubePlotModelMeanChk'),
                     no: "cubePlotModelMeanChk",
                     style: "ml-5 mb-1",
                     bs_type: "valuebox",
@@ -431,7 +354,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
             }, 
 			cubePlotIndependent: {
                 el: new dstVariableList(config, {
-                    label: localization.en.cubePlotIndependent,
+                    label: linearRegressionDoE.t('cubePlotIndependent'),
                     no: "cubePlotIndependent",
                     required: false,
                     filter: "String|Numeric|Logical|Ordinal|Nominal|Scale",
@@ -475,13 +398,22 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
 				objects.cubePlotIndependent.el.content],
 		
             nav: {
-                name: localization.en.navigation,
+                name: linearRegressionDoE.t('navigation'),
                 icon: "icon-doe",
                 modal: config.id
             }
         };
         super(config, objects, content);
-        this.help = localization.en.help;
+        
+        this.help = {
+            title: linearRegressionDoE.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: linearRegressionDoE.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new linearRegressionDoE().render()
+
+module.exports = {
+    render: () => new linearRegressionDoE().render()
+}

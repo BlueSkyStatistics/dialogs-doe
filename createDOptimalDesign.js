@@ -1,53 +1,14 @@
-var localization = {
-    en: {
-        title: "Create D-Optimal Design",
-        navigation: "Create D-Optimal Design",
-		
-		datasetname: "D-optimal Design name",
 
-		candidateDesignChk: "Create D-optimal design from an existing candidate design (full factorial, FrF2, Orthogonal, or Latin) - make sure this dialog is opened on the existing design on the data grid to choose the candidate design implicitely",
-		
-        selectedvars: "Select variables (Ignored if candidate design is checked above) to create a D-optmal design not from an exsiting candidate design",
-        
-        numOfRuns: "Number of runs",
-        formula : "Formula - leave it deafult to include all factiors in the model or type in a linear model formula e.g. ~quad(.)",
-		
-        numOfOptiRepeats: "Number of optimization Repeats",
-		//repeatOnlyChk:"Repeat only",
-		
-		numOfBlocks: "Number of blocks",
-		blockName: "Name of the block", 
-
-		lbl1 : "You may not need to change the randomization settings",
-        randomseeds : "Seed for randomization",
-        randomizationChk:"Randomize the design generation",
-		
-		help: {
-            title: "Create D-Optimal Design",
-            r_help: "help(Dopt.design, package = DoE.wrapper)",
-			body: `
-				<b>Description</b></br>
-				Dopt.design function for creating D-optimal designs with or without blocking
-				<br/>
-				<br/>
-				For the detail help - use R help(Dopt.design, package = DoE.wrapper)
-				<br/>
-				<br/>
-				To try this, you may use the sample dataset file called factor_grid_full_factorial_to use_for_Doptimal_Design.xlsx. Open the file in the data grid with file open menu
-				<br/>
-				Create the full factorial design first, choose the full fatorial design from this dialog/UI and specify runs = 16 to create a D-optimal design from a full factorial design  
-			`
-		},
-		
-    }
-}
 
 
 class createDOptimalDesign extends baseModal {
+    static dialogId = 'createDOptimalDesign'
+    static t = baseModal.makeT(createDOptimalDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "createDOptimalDesign",
-            label: localization.en.title,
+            id: createDOptimalDesign.dialogId,
+            label: createDOptimalDesign.t('title'),
             modalType: "two",
             RCode: `
             require(DoE.base)
@@ -88,7 +49,7 @@ class createDOptimalDesign extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: localization.en.datasetname,
+                    label: createDOptimalDesign.t('datasetname'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -99,7 +60,7 @@ class createDOptimalDesign extends baseModal {
             },
 			candidateDesignChk: { 
 				el: new checkbox(config, { 
-				label: localization.en.candidateDesignChk, 
+				label: createDOptimalDesign.t('candidateDesignChk'), 
 				no: "candidateDesignChk", 
 				extraction: "Boolean", 
 				newline: true, 
@@ -108,7 +69,7 @@ class createDOptimalDesign extends baseModal {
 			},
             selectedvars: {
                 el: new dstVariableList(config, {
-                    label: localization.en.selectedvars,
+                    label: createDOptimalDesign.t('selectedvars'),
                     no: "selectedvars",
                     filter: "String|Numeric|Date|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma|Enclosed",
@@ -118,7 +79,7 @@ class createDOptimalDesign extends baseModal {
             numOfRuns: {
                 el: new inputSpinner(config, {
                     no: 'numOfRuns',
-                    label: localization.en.numOfRuns,
+                    label: createDOptimalDesign.t('numOfRuns'),
                     required: true,
                     min: 1,
                     max: 99999,
@@ -129,7 +90,7 @@ class createDOptimalDesign extends baseModal {
             formula: {
                 el: new input(config, {
                     no: "formula",
-                    label: localization.en.formula,
+                    label: createDOptimalDesign.t('formula'),
                     placeholder: "",
                     allow_spaces:true,
                     extraction: "TextAsIs",
@@ -141,7 +102,7 @@ class createDOptimalDesign extends baseModal {
             numOfOptiRepeats: {
                 el: new inputSpinner(config, {
                     no: 'numOfOptiRepeats',
-                    label: localization.en.numOfOptiRepeats,
+                    label: createDOptimalDesign.t('numOfOptiRepeats'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -153,7 +114,7 @@ class createDOptimalDesign extends baseModal {
 			numOfBlocks: {
                 el: new inputSpinner(config, {
                     no: 'numOfBlocks',
-                    label: localization.en.numOfBlocks,
+                    label: createDOptimalDesign.t('numOfBlocks'),
                     required: true,
                     min: 1,
                     max: 99,
@@ -164,7 +125,7 @@ class createDOptimalDesign extends baseModal {
 			blockName: {
                 el: new input(config, {
                     no: 'blockName',
-                    label: localization.en.blockName,
+                    label: createDOptimalDesign.t('blockName'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -173,10 +134,10 @@ class createDOptimalDesign extends baseModal {
 					width: "w-25",
                 })
             },
-			// lblheading: { el: new labelVar(config, { label: localization.en.lblheading, style: "mt-3",h: 5 }) },
+			// lblheading: { el: new labelVar(config, { label: createDOptimalDesign.t('lblheading'), style: "mt-3",h: 5 }) },
             lbl1: { 
 				el: new labelVar(config, { 
-					label: localization.en.lbl1, 
+					label: createDOptimalDesign.t('lbl1'), 
 					style: "mt-3",
 					h: 6, 
 				}) 
@@ -184,7 +145,7 @@ class createDOptimalDesign extends baseModal {
             randomseeds: {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
-                    label: localization.en.randomseeds,
+                    label: createDOptimalDesign.t('randomseeds'),
                     //required: true,
                     //min: 1,
                     max: 99999,
@@ -195,7 +156,7 @@ class createDOptimalDesign extends baseModal {
             },            
 			randomizationChk: { 
 				el: new checkbox(config, { 
-					label: localization.en.randomizationChk, 
+					label: createDOptimalDesign.t('randomizationChk'), 
 					no: "randomizationChk", 
 					extraction: "Boolean", 
 					state: "checked",
@@ -220,14 +181,23 @@ class createDOptimalDesign extends baseModal {
                 objects.randomseeds.el.content, 
 				],
             nav: {
-                name: localization.en.navigation,
+                name: createDOptimalDesign.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: createDOptimalDesign.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: createDOptimalDesign.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new createDOptimalDesign().render()
+
+module.exports = {
+    render: () => new createDOptimalDesign().render()
+}

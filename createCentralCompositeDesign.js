@@ -1,51 +1,13 @@
-var localization = {
-    en: {
-        title: "Create Central Composite (Quantitative) Design from an exsiting FrF2 Design",
-        navigation: "Create Central Composite (Quantitative) Design",
-        
-		datasetname: "Design name",
-		
-        datasetFrF2 : "Select an exisiting FrF2 (Quantitative) design",
-        
-		alpha: "Number of star points(alpha)",
-        alphalbl: "“orthogonal”, “rotatable”, or a number that indicates the position of the star points",
-        
-        numOfCenterPts: "Number of center points, or two numbers seperated by comma (for cube and the star portion)",
-		
-		blockName: "Name of the block", 
 
-        lbl1 : "You may not need to change the randomization settings",
-        randomseeds : "Seed for randomization",
-        randomizationChk:"Randomize the design generation",
-		
-		help: {
-            title: "Create Central Composite (Quantitative) Design from an exsiting FrF2 Design",
-            r_help: "help(ccd.augment, package = DoE.wrapper)",
-			body: `
-				<b>Description</b></br>
-				ccd.augment function for augmenting an existing fractional factorial with a star portion (using rsm package) in case of a late decision for a sequential procedure
-				<br/>
-				<br/>
-				For the detail help - use R help(ccd.augment, package = DoE.wrapper)
-				<br/>
-				<br/>
-				To try this, you may use the sample dataset file called factors for FrF2 design for CCD.xlsx. Open the file in the data grid with file open menu
-				<br/>
-				Create the FrF2 design first (with the 4 factors) - choose option number of runs as 0 and resolution as 5.
-				Then ceate the central composite design from the above FrF2 design keeping all the deafult options on this central composite design dialog/UI  
-				<br/>
-			`
-		},
-		
-		
-    }
-}
 
 class createCentralCompositeDesign extends baseModal {
+    static dialogId = 'createCentralCompositeDesign'
+    static t = baseModal.makeT(createCentralCompositeDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "createCentralCompositeDesign",
-            label: localization.en.title,
+            id: createCentralCompositeDesign.dialogId,
+            label: createCentralCompositeDesign.t('title'),
             modalType: "two",
             RCode: `
             require(DoE.wrapper)
@@ -79,7 +41,7 @@ class createCentralCompositeDesign extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: localization.en.datasetname,
+                    label: createCentralCompositeDesign.t('datasetname'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -89,7 +51,7 @@ class createCentralCompositeDesign extends baseModal {
             },
 			datasetFrF2: {
                 el: new dstVariable(config, {
-                    label: localization.en.datasetFrF2,
+                    label: createCentralCompositeDesign.t('datasetFrF2'),
                     no: "datasetFrF2",
                     filter: "Dataset",
                     //extraction: "UseComma|Enclosed",
@@ -100,7 +62,7 @@ class createCentralCompositeDesign extends baseModal {
             alpha: {
                 el: new input(config, {
                     no: "alpha",
-                    label: localization.en.alpha,
+                    label: createCentralCompositeDesign.t('alpha'),
                     placeholder: "orthogonal",
                     allow_spaces:true,
                     extraction: "NoPrefix|UseComma",
@@ -110,7 +72,7 @@ class createCentralCompositeDesign extends baseModal {
 			numOfCenterPts: {
                 el: new input(config, {
                     no: 'numOfCenterPts',
-                    label: localization.en.numOfCenterPts,
+                    label: createCentralCompositeDesign.t('numOfCenterPts'),
 					allow_spaces:true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -121,7 +83,7 @@ class createCentralCompositeDesign extends baseModal {
 			blockName: {
                 el: new input(config, {
                     no: 'blockName',
-                    label: localization.en.blockName,
+                    label: createCentralCompositeDesign.t('blockName'),
                     placeholder: "",
                     //required: true,
                     extraction: "TextAsIs",
@@ -133,7 +95,7 @@ class createCentralCompositeDesign extends baseModal {
             randomseeds: {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
-                    label: localization.en.randomseeds,
+                    label: createCentralCompositeDesign.t('randomseeds'),
                     //required: true,
                     //min: 1,
                     max: 99999,
@@ -142,12 +104,12 @@ class createCentralCompositeDesign extends baseModal {
 					style: "ml-5",
                 })
             },            
-            // lblheading: { el: new labelVar(config, { label: localization.en.lblheading, style: "mt-3",h: 5 }) },
-            lbl1: { el: new labelVar(config, { label: localization.en.lbl1, style: "mt-3",h: 6 }) },
+            // lblheading: { el: new labelVar(config, { label: createCentralCompositeDesign.t('lblheading'), style: "mt-3",h: 5 }) },
+            lbl1: { el: new labelVar(config, { label: createCentralCompositeDesign.t('lbl1'), style: "mt-3",h: 6 }) },
 
             randomizationChk: { 
 				el: new checkbox(config, { 
-					label: localization.en.randomizationChk, 
+					label: createCentralCompositeDesign.t('randomizationChk'), 
 					no: "randomizationChk", 
 					extraction: "Boolean", 
 					state: "checked",
@@ -169,14 +131,23 @@ class createCentralCompositeDesign extends baseModal {
 				objects.randomizationChk.el.content,
                 objects.randomseeds.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: createCentralCompositeDesign.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: createCentralCompositeDesign.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: createCentralCompositeDesign.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new createCentralCompositeDesign().render()
+
+module.exports = {
+    render: () => new createCentralCompositeDesign().render()
+}

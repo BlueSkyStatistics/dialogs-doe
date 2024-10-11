@@ -1,27 +1,14 @@
-var localization = {
-    en: {
-        title: "Inspect Design",
-        navigation: "Inspect design",
 
-		responseVariablesChk:"Show design type and response variables",
-		
-        summarizeBrief:"Summarize (brief)",//summarizeBrief
-
-        summarizeDetails:"Summarize (detail)",//summarizeDetails
-		
-		printDesign:"Print Design", //call the BSkyFormat on the design object 
-		printDesignWithRunOrderChk: "Print Design with Run Order",
-
-        designinfo:"Advance option - Details of the design object with design.info()" //designinfo
-    }
-}
 
 
 class inspectDesign extends baseModal {
+    static dialogId = 'inspectDesign'
+    static t = baseModal.makeT(inspectDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "inspectDesign",
-            label: localization.en.title,
+            id: inspectDesign.dialogId,
+            label: inspectDesign.t('title'),
             modalType: "one",
             RCode: `
 				
@@ -83,20 +70,20 @@ class inspectDesign extends baseModal {
 			
 			responseVariablesChk: { el: new checkbox(config, 
 			{ 
-				label: localization.en.responseVariablesChk, 
+				label: inspectDesign.t('responseVariablesChk'), 
 				no: "responseVariablesChk", 
 				//state:"checked", 
 				extraction: "Boolean", 
 				newline: true, 
 			}) 
 			},
-            summarizeBrief: { el: new checkbox(config, { label: localization.en.summarizeBrief, no: "summarizeBrief", extraction: "Boolean", newline: true }) },
-            summarizeDetails: { el: new checkbox(config, { label: localization.en.summarizeDetails, no: "summarizeDetails", extraction: "Boolean", newline: true }) },
-            printDesign: { el: new checkbox(config, { label: localization.en.printDesign, no: "printDesign", extraction: "Boolean", newline: true }) },
+            summarizeBrief: { el: new checkbox(config, { label: inspectDesign.t('summarizeBrief'), no: "summarizeBrief", extraction: "Boolean", newline: true }) },
+            summarizeDetails: { el: new checkbox(config, { label: inspectDesign.t('summarizeDetails'), no: "summarizeDetails", extraction: "Boolean", newline: true }) },
+            printDesign: { el: new checkbox(config, { label: inspectDesign.t('printDesign'), no: "printDesign", extraction: "Boolean", newline: true }) },
 	
 			printDesignWithRunOrderChk: {
                 el: new checkbox(config, {
-                    label: localization.en.printDesignWithRunOrderChk,
+                    label: inspectDesign.t('printDesignWithRunOrderChk'),
                     no: "printDesignWithRunOrderChk",
                     style: "ml-5",
                     bs_type: "valuebox",
@@ -107,7 +94,7 @@ class inspectDesign extends baseModal {
                 })
             },
 			
-			designinfo: { el: new checkbox(config, { label: localization.en.designinfo, no: "designinfo", extraction: "Boolean", newline: true }) },
+			designinfo: { el: new checkbox(config, { label: inspectDesign.t('designinfo'), no: "designinfo", extraction: "Boolean", newline: true }) },
         }
         const content = {
             items: [ 
@@ -118,7 +105,7 @@ class inspectDesign extends baseModal {
                      objects.summarizeDetails.el.content,
                         objects.designinfo.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: inspectDesign.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
@@ -127,4 +114,7 @@ class inspectDesign extends baseModal {
         super(config, objects, content);
     }
 }
-module.exports.item = new inspectDesign().render()
+
+module.exports = {
+    render: () => new inspectDesign().render()
+}

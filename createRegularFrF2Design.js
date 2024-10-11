@@ -1,67 +1,14 @@
-var localization = {
-    en: {
-        title: "Create Regular (Fractional) Factorial 2-level Design",
-        navigation: "Create Regular (Fractional) Factorial 2-level Design",
-        selectedvars: "Select variables",
-        datasetname: "Design name",
 
-        lblheading: "Size and randomization",
-        numOfRuns: "Number of runs (if specified, it must be a power of 2 otherwise make it 0)",
-
-        //numOfFactors: "Number of factors",
-        numOfBlocks:"Number of blocks",
-        alias2FIsChk:"blocks may be aliased with 2fis",
-
-        //numOfCenterPts: "Number of center points",
-		numOfCenterPts: "Number of center points (if used, have minimum 2)",
-		centerPointDistribution: "Number of positions for center point distribution (have >1)",
-		
-        replications: "Replications",
-        repeatOnlyChk:"Repeat only",
-
-        lbl1 : "You may not need to change the randomization settings",
-        randomseeds : "Seed for randomization",
-        randomizationChk:"Randomize the design generation",
-
-        lbl2 : "NOTE: affects design generation for MaxC2 choice OR unspecified number of runs only",
-        lbldesignheading: "Design properties",
-        roman:"Minimum resolution(III, IV, V...)",
-        marad:"MA (Maximum resolution and minimum aberration)",
-        maxC2rad:"MaxC2 (Maximum number of clear 2fis)",
-		
-		lbl3 : "Specify a design catalog (optional)",
-		designChk:"Use a design from the catalog",
-		designcatlgname : "Design catalog name e.g. catlg",
-        designnamefromcatlg : "Design name from the design catalog",
-		nrunsChk:"Auto calculate number of runs from the design specified above",
-		
-		help: {
-            title: "Create Regular (Fractional) Factorial 2-level Design",
-            r_help: "help(FrF2, package = FrF2)",
-			body: `
-				<b>Description</b></br>
-				FrF2 function to generate regular Fractional Factorial 2-level designs
-				<br/>
-				<br/>
-				For the detail help - use R help(FrF2, package = FrF2)
-				<br/>
-				<br/>
-				Use the menu DOE->Inpect Design->Inspect FrF2 Catalog to browse avaiable FrF2 Designs to reference from the loaded design catalog in FrF2 package
-				<br/>
-				<br/>
-				To try this, you may use the sample dataset file called factor_grid_Injection Molding FrF2.xlsx. Open the file in the data grid with file open menu
-				<br/>
-			`
-		},
-    }
-}
 
 
 class createRegular2LevelDesign extends baseModal {
+    static dialogId = 'createRegular2LevelDesign'
+    static t = baseModal.makeT(createRegular2LevelDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "createRegularFrF2Design",
-            label: localization.en.title,
+            id: createRegular2LevelDesign.dialogId,
+            label: createRegular2LevelDesign.t('title'),
             modalType: "two",
             RCode: `
             require(DoE.base)
@@ -123,7 +70,7 @@ class createRegular2LevelDesign extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: localization.en.datasetname,
+                    label: createRegular2LevelDesign.t('datasetname'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -133,7 +80,7 @@ class createRegular2LevelDesign extends baseModal {
             },
             selectedvars: {
                 el: new dstVariableList(config, {
-                    label: localization.en.selectedvars,
+                    label: createRegular2LevelDesign.t('selectedvars'),
                     no: "selectedvars",
                     filter: "String|Numeric|Date|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma|Enclosed",                    
@@ -144,7 +91,7 @@ class createRegular2LevelDesign extends baseModal {
             numOfRuns: {
                 el: new inputSpinner(config, {
                     no: 'numOfRuns',
-                    label: localization.en.numOfRuns,
+                    label: createRegular2LevelDesign.t('numOfRuns'),
                     required: false,
                     min: 0,
                     max: 99999,
@@ -158,7 +105,7 @@ class createRegular2LevelDesign extends baseModal {
             numOfBlocks: {
                 el: new inputSpinner(config, {
                     no: 'numOfBlocks',
-                    label: localization.en.numOfBlocks,
+                    label: createRegular2LevelDesign.t('numOfBlocks'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -170,7 +117,7 @@ class createRegular2LevelDesign extends baseModal {
 			numOfCenterPts: {
                 el: new inputSpinner(config, {
                     no: 'numOfCenterPts',
-                    label: localization.en.numOfCenterPts,
+                    label: createRegular2LevelDesign.t('numOfCenterPts'),
                     required: true,
                     min: 0,
                     max: 9999,
@@ -182,7 +129,7 @@ class createRegular2LevelDesign extends baseModal {
 			centerPointDistribution: {
                 el: new inputSpinner(config, {
                     no: 'centerPointDistribution',
-                    label: localization.en.centerPointDistribution,
+                    label: createRegular2LevelDesign.t('centerPointDistribution'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -194,7 +141,7 @@ class createRegular2LevelDesign extends baseModal {
             replications: {
                 el: new inputSpinner(config, {
                     no: 'replications',
-                    label: localization.en.replications,
+                    label: createRegular2LevelDesign.t('replications'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -205,7 +152,7 @@ class createRegular2LevelDesign extends baseModal {
             randomseeds: {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
-                    label: localization.en.randomseeds,
+                    label: createRegular2LevelDesign.t('randomseeds'),
                     //required: true,
                    // min: 1,
                     max: 9999,
@@ -217,7 +164,7 @@ class createRegular2LevelDesign extends baseModal {
             roman: {
                 el: new inputSpinner(config, {
                     no: 'roman',
-                    label: localization.en.roman,
+                    label: createRegular2LevelDesign.t('roman'),
                     required: true,
                     min: 3,
                     max: 99,
@@ -229,7 +176,7 @@ class createRegular2LevelDesign extends baseModal {
 			designcatlgname: {
                 el: new input(config, {
                     no: 'designcatlgname',
-                    label: localization.en.designcatlgname,
+                    label: createRegular2LevelDesign.t('designcatlgname'),
 					allow_spaces:true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -242,7 +189,7 @@ class createRegular2LevelDesign extends baseModal {
 			designnamefromcatlg: {
                 el: new input(config, {
                     no: 'designnamefromcatlg',
-                    label: localization.en.designnamefromcatlg,
+                    label: createRegular2LevelDesign.t('designnamefromcatlg'),
 					allow_spaces:true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -252,18 +199,18 @@ class createRegular2LevelDesign extends baseModal {
                 })
             },
 			
-            lblheading: { el: new labelVar(config, { label: localization.en.lblheading, style: "mt-3",h: 5 }) },
-            lbl1: { el: new labelVar(config, { label: localization.en.lbl1, style: "mt-3",h: 6 }) },
-            lbl2: { el: new labelVar(config, { label: localization.en.lbl2, style: "mt-3",h: 6 }) },
-			lbl3: { el: new labelVar(config, { label: localization.en.lbl3, style: "mt-3",h: 6 }) },
-            lbldesignheading: { el: new labelVar(config, { label: localization.en.lbldesignheading, style: "mt-3",h: 5 }) },
+            lblheading: { el: new labelVar(config, { label: createRegular2LevelDesign.t('lblheading'), style: "mt-3",h: 5 }) },
+            lbl1: { el: new labelVar(config, { label: createRegular2LevelDesign.t('lbl1'), style: "mt-3",h: 6 }) },
+            lbl2: { el: new labelVar(config, { label: createRegular2LevelDesign.t('lbl2'), style: "mt-3",h: 6 }) },
+			lbl3: { el: new labelVar(config, { label: createRegular2LevelDesign.t('lbl3'), style: "mt-3",h: 6 }) },
+            lbldesignheading: { el: new labelVar(config, { label: createRegular2LevelDesign.t('lbldesignheading'), style: "mt-3",h: 5 }) },
             
-            alias2FIsChk: { el: new checkbox(config, { label: localization.en.alias2FIsChk, no: "alias2FIsChk",  style: "ml-5", extraction: "Boolean", newline: false }) },
-            repeatOnlyChk: { el: new checkbox(config, { label: localization.en.repeatOnlyChk, no: "repeatOnlyChk", style: "ml-5", extraction: "Boolean", newline: false }) },
+            alias2FIsChk: { el: new checkbox(config, { label: createRegular2LevelDesign.t('alias2FIsChk'), no: "alias2FIsChk",  style: "ml-5", extraction: "Boolean", newline: false }) },
+            repeatOnlyChk: { el: new checkbox(config, { label: createRegular2LevelDesign.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ml-5", extraction: "Boolean", newline: false }) },
             
 			randomizationChk: { 
 				el: new checkbox(config, { 
-					label: localization.en.randomizationChk, 
+					label: createRegular2LevelDesign.t('randomizationChk'), 
 					no: "randomizationChk", 
 					//style: "ml-5", 
 					state: "checked", 
@@ -272,11 +219,11 @@ class createRegular2LevelDesign extends baseModal {
 				}) 
 			},
             
-			marad: { el: new radioButton(config, { label: localization.en.marad, no: "maxC2radgp", increment: "marad", value: "FALSE", state: "checked", extraction: "ValueAsIs" }) },
-            maxC2rad: { el: new radioButton(config, { label: localization.en.maxC2rad, no: "maxC2radgp", increment: "maxC2rad", value: "TRUE", state: "", extraction: "ValueAsIs" }) },
+			marad: { el: new radioButton(config, { label: createRegular2LevelDesign.t('marad'), no: "maxC2radgp", increment: "marad", value: "FALSE", state: "checked", extraction: "ValueAsIs" }) },
+            maxC2rad: { el: new radioButton(config, { label: createRegular2LevelDesign.t('maxC2rad'), no: "maxC2radgp", increment: "maxC2rad", value: "TRUE", state: "", extraction: "ValueAsIs" }) },
 			designChk: { 
 				el: new checkbox(config, { 
-					label: localization.en.designChk, 
+					label: createRegular2LevelDesign.t('designChk'), 
 					no: "designChk", 
 					//dependant_objects: ["designcatlgname","designnamefromcatlg", "nrunsChk"], 
 					state: "unchecked", 
@@ -284,7 +231,7 @@ class createRegular2LevelDesign extends baseModal {
 					newline: false, 
 				}) 
 			},
-			nrunsChk: { el: new checkbox(config, { label: localization.en.nrunsChk, no: "nrunsChk",  style: "mt-5, ml-5", extraction: "Boolean", newline: false }) },
+			nrunsChk: { el: new checkbox(config, { label: createRegular2LevelDesign.t('nrunsChk'), no: "nrunsChk",  style: "mt-5, ml-5", extraction: "Boolean", newline: false }) },
 		}
         const content = {
             left: [objects.content_var.el.content],
@@ -304,14 +251,23 @@ class createRegular2LevelDesign extends baseModal {
 				objects.lbl3.el.content, objects.designChk.el.content, objects.designcatlgname.el.content, objects.designnamefromcatlg.el.content,
 				objects.nrunsChk.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: createRegular2LevelDesign.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: createRegular2LevelDesign.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: createRegular2LevelDesign.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new createRegular2LevelDesign().render()
+
+module.exports = {
+    render: () => new createRegular2LevelDesign().render()
+}

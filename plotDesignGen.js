@@ -1,16 +1,13 @@
 
-var localization = {
-    en: {
-        title: "Plot Design (General)",
-        navigation: "Plot Design (General)",
-        subsetvars: "Select variables"
-    }
-}
+
 class plotDesign extends baseModal {
+    static dialogId = 'plotDesign'
+    static t = baseModal.makeT(plotDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "plotDesign",
-            label: localization.en.title,
+            id: plotDesign.dialogId,
+            label: plotDesign.t('title'),
             modalType: "two",
             RCode: `
             temp <-  {{dataset.name}}  
@@ -23,7 +20,7 @@ class plotDesign extends baseModal {
             content_var: { el: new srcVariableList(config, {action: "move"}) },
             subsetvars: {
                 el: new dstVariableList(config, {
-                    label: localization.en.subsetvars,
+                    label: plotDesign.t('subsetvars'),
                     no: "subsetvars",
                     filter: "String|Numeric|Date|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma|Enclosed",
@@ -35,13 +32,22 @@ class plotDesign extends baseModal {
             left: [objects.content_var.el.content],
             right: [objects.subsetvars.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: plotDesign.t('navigation'),
                 icon: "icon-doe",
                 modal: config.id
             }
         }
         super(config, objects, content);
-        this.help = localization.en.help;
+        
+        this.help = {
+            title: plotDesign.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: plotDesign.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new plotDesign().render()
+
+module.exports = {
+    render: () => new plotDesign().render()
+}

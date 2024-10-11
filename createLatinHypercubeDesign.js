@@ -1,45 +1,13 @@
-var localization = {
-    en: {
-        title: "Create Latin Hypercube Design (for Quantitative Factors)",
-        navigation: "Create Latin Hypercube (Quantitative) Design",
-        selectedvars: "Select variables",
-        datasetname: "Design name",
 
-        lblheading: "Size and randomization",
-        numOfRuns: "Number of runs",
-
-        numOfDeciPlaces: "Number of decimal places",
-
-        lbl1 : "You may not need to change the randomization settings",
-        randomseeds : "Seed for randomization",
-        randomizationChk:"Randomize the design generation",
-
-        lhsDesignType: "latin hypercube sampling designs (check lhs or DiceDesign packages for other types)",
-		
-		help: {
-            title: "Create Latin Hypercube Design (for Quantitative Factors)",
-            r_help: "help(lhs.design, package = DoE.wrapper)",
-			body: `
-				<b>Description</b></br>
-				lhs.design function for accessing latin hypercube sampling designs from package lhs or space-filling designs from package DiceDesign, which are useful for quantitative factors with many possible levels. In particular, they can be used in computer experiments. Most of the designs are random samples.
-				<br/>
-				<br/>
-				For the detail help - use R help(lhs.design, package = DoE.wrapper)
-				<br/>
-				<br/>
-				To try this, you may use the sample dataset file called factor_grid__latin_hypercube_Design.xlsx. Open the file in the data grid with file open menu
-				<br/>
-				
-			`
-		},
-    }
-}
 
 class createLatinHypercubeDesign extends baseModal {
+    static dialogId = 'createLatinHypercubeDesign'
+    static t = baseModal.makeT(createLatinHypercubeDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "createLatinHypercubeDesign",
-            label: localization.en.title,
+            id: createLatinHypercubeDesign.dialogId,
+            label: createLatinHypercubeDesign.t('title'),
             modalType: "two",
             RCode: `
             require(DoE.base)
@@ -66,7 +34,7 @@ class createLatinHypercubeDesign extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: localization.en.datasetname,
+                    label: createLatinHypercubeDesign.t('datasetname'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -76,7 +44,7 @@ class createLatinHypercubeDesign extends baseModal {
             },
             selectedvars: {
                 el: new dstVariableList(config, {
-                    label: localization.en.selectedvars,
+                    label: createLatinHypercubeDesign.t('selectedvars'),
                     no: "selectedvars",
                     filter: "String|Numeric|Date|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma|Enclosed",
@@ -86,7 +54,7 @@ class createLatinHypercubeDesign extends baseModal {
             numOfRuns: {
                 el: new inputSpinner(config, {
                     no: 'numOfRuns',
-                    label: localization.en.numOfRuns,
+                    label: createLatinHypercubeDesign.t('numOfRuns'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -99,7 +67,7 @@ class createLatinHypercubeDesign extends baseModal {
             numOfDeciPlaces: {
                 el: new inputSpinner(config, {
                     no: 'numOfDeciPlaces',
-                    label: localization.en.numOfDeciPlaces,
+                    label: createLatinHypercubeDesign.t('numOfDeciPlaces'),
                     required: true,
                     min: 0,
                     max: 999,
@@ -112,7 +80,7 @@ class createLatinHypercubeDesign extends baseModal {
             randomseeds: {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
-                    label: localization.en.randomseeds,
+                    label: createLatinHypercubeDesign.t('randomseeds'),
                     //required: true,
                     //min: 1,
                     max: 99999,
@@ -124,7 +92,7 @@ class createLatinHypercubeDesign extends baseModal {
             /* lhsDesignType: {
                 el: new comboBox(config, {
                     no: 'lhsDesignType',
-                    label: localization.en.lhsDesignType,
+                    label: createLatinHypercubeDesign.t('lhsDesignType'),
                     multiple: false,
                     extraction: "NoPrefix|UseComma",
                     options: ["optimum", "genetic", "improved", "maximum", "random"],
@@ -134,7 +102,7 @@ class createLatinHypercubeDesign extends baseModal {
 			lhsDesignType: {
                 el: new input(config, {
                     no: 'lhsDesignType',
-                    label: localization.en.lhsDesignType,
+                    label: createLatinHypercubeDesign.t('lhsDesignType'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -143,21 +111,21 @@ class createLatinHypercubeDesign extends baseModal {
             },
 			lblheading: { 
 				el: new labelVar(config, { 
-					label: localization.en.lblheading, 
+					label: createLatinHypercubeDesign.t('lblheading'), 
 					style: "mt-3",
 					h: 5 
 				}) 
 			},
             lbl1: { 
 				el: new labelVar(config, { 
-					label: localization.en.lbl1, 
+					label: createLatinHypercubeDesign.t('lbl1'), 
 					style: "mt-3",
 					h: 6 
 				}) 
 			},
 			randomizationChk: { 
 				el: new checkbox(config, { 
-					label: localization.en.randomizationChk, 
+					label: createLatinHypercubeDesign.t('randomizationChk'), 
 					no: "randomizationChk", 
 					extraction: "Boolean", 
 					state: "checked",
@@ -180,14 +148,23 @@ class createLatinHypercubeDesign extends baseModal {
      
                 objects.lhsDesignType.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: createLatinHypercubeDesign.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: createLatinHypercubeDesign.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: createLatinHypercubeDesign.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new createLatinHypercubeDesign().render()
+
+module.exports = {
+    render: () => new createLatinHypercubeDesign().render()
+}

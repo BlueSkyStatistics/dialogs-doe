@@ -1,34 +1,15 @@
 
-var localization = {
-    en: {
-        title: "Main Effects and interaction Plots (General) - plots means only",
-        navigation: "Main Effects and interaction Plots (General)",
-        tvarbox1: "Factor 1 - factor defining horizontal axis of the plot.",
-        tvarbox2: "Factor 2 - if present, factor defining profiles of means",
-        tvarbox3: "Response variable(select one)",
-		
-		help: {
-            title: "Main Effects and interaction Plots (General) - plots means only",
-            r_help: "help(plotMeans, package = RcmdrMisc)", 
-			body: `
-				<b>Description</b></br>
-				Plot Means for one or two-way layout  
-				<br/>
-				<br/>
-				For the detail help - use R help(plotMeans, package = RcmdrMisc)
-				<br/>
-				
-			`
-		},
-    }
-}
+
 
 
 class mainEffectsIntractionPlots extends baseModal {
+    static dialogId = 'mainEffectsIntractionPlots'
+    static t = baseModal.makeT(mainEffectsIntractionPlots.dialogId)
+
     constructor() {
         var config = {
-            id: "mainEffectsIntractionPlots",
-            label: localization.en.title,
+            id: mainEffectsIntractionPlots.dialogId,
+            label: mainEffectsIntractionPlots.t('title'),
             modalType: "two",
             RCode: `
             require(RcmdrMisc)
@@ -42,7 +23,7 @@ class mainEffectsIntractionPlots extends baseModal {
             content_var: { el: new srcVariableList(config, {action: "move"}) },
             tvarbox1: {
                 el: new dstVariable(config, {
-                    label: localization.en.tvarbox1,
+                    label: mainEffectsIntractionPlots.t('tvarbox1'),
                     no: "tvarbox1",
                     filter: "String|Numeric|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma",
@@ -51,7 +32,7 @@ class mainEffectsIntractionPlots extends baseModal {
             },
             tvarbox2: {
                 el: new dstVariable(config, {
-                    label: localization.en.tvarbox2,
+                    label: mainEffectsIntractionPlots.t('tvarbox2'),
                     no: "tvarbox2",
                     filter: "String|Numeric|Logical|Ordinal|Nominal|Scale",
                     // extraction: "Prefix|UseComma",
@@ -60,7 +41,7 @@ class mainEffectsIntractionPlots extends baseModal {
             },            
             tvarbox3: {
                 el: new dstVariable(config, {
-                    label: localization.en.tvarbox3,
+                    label: mainEffectsIntractionPlots.t('tvarbox3'),
                     no: "tvarbox3",
                     filter: "Numeric|Scale",
                     extraction: "NoPrefix|UseComma",
@@ -73,13 +54,22 @@ class mainEffectsIntractionPlots extends baseModal {
             left: [objects.content_var.el.content],
             right: [objects.tvarbox3.el.content, objects.tvarbox1.el.content, objects.tvarbox2.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: mainEffectsIntractionPlots.t('navigation'),
                 icon: "icon-doe",
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: mainEffectsIntractionPlots.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: mainEffectsIntractionPlots.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new mainEffectsIntractionPlots().render()
+
+module.exports = {
+    render: () => new mainEffectsIntractionPlots().render()
+}

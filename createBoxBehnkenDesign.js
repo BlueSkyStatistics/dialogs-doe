@@ -1,43 +1,13 @@
-var localization = {
-    en: {
-        title: "Create Box-Behnken (Quantitative) Design",
-        navigation: "Create Box-Behnken (Quantitative) Design",
-        selectedvars: "Select variables",
-        datasetname: "Design name",
 
-        numCenter: "integer number of center points for each block",
-
-        blockName: "Name of the block", 
-
-        lbl1 : "You may not need to change the randomization settings",
-        randomseeds : "Seed for randomization",
-        randomizationChk:"Randomize the design generation",
-		
-		help: {
-            title: "Create Box-Behnken (Quantitative) Design",
-            r_help: "help(bbd.design, package = DoE.wrapper)",
-			body: `
-				<b>Description</b></br>
-				bbd.design function for generating Box-Behnken designs, making use of package rsm
-				<br/>
-				<br/>
-				For the detail help - use R help(bbd.design, package = DoE.wrapper)
-				<br/>
-				<br/>
-				To try this, you may use the sample dataset file called factors for bbd design.xlsx. Open the file in the data grid with file open menu
-				<br/>
-				
-			`
-		},
-		
-    }
-}
 
 class createBoxBehnkenDesign extends baseModal {
+    static dialogId = 'createBoxBehnkenDesign'
+    static t = baseModal.makeT(createBoxBehnkenDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "createBoxBehnkenDesign",
-            label: localization.en.title,
+            id: createBoxBehnkenDesign.dialogId,
+            label: createBoxBehnkenDesign.t('title'),
             modalType: "two",
             RCode: `
 			require(DoE.wrapper)
@@ -65,7 +35,7 @@ class createBoxBehnkenDesign extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: localization.en.datasetname,
+                    label: createBoxBehnkenDesign.t('datasetname'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -76,7 +46,7 @@ class createBoxBehnkenDesign extends baseModal {
             },
             selectedvars: {
                 el: new dstVariableList(config, {
-                    label: localization.en.selectedvars,
+                    label: createBoxBehnkenDesign.t('selectedvars'),
                     no: "selectedvars",
                     filter: "String|Numeric|Date|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma|Enclosed",
@@ -86,7 +56,7 @@ class createBoxBehnkenDesign extends baseModal {
             numCenter: {
                 el: new inputSpinner(config, {
                     no: 'numCenter',
-                    label: localization.en.numCenter,
+                    label: createBoxBehnkenDesign.t('numCenter'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -98,7 +68,7 @@ class createBoxBehnkenDesign extends baseModal {
             blockName: {
                 el: new input(config, {
                     no: 'blockName',
-                    label: localization.en.blockName,
+                    label: createBoxBehnkenDesign.t('blockName'),
                     placeholder: "",
                     //required: true,
                     extraction: "TextAsIs",
@@ -110,7 +80,7 @@ class createBoxBehnkenDesign extends baseModal {
             randomseeds: {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
-                    label: localization.en.randomseeds,
+                    label: createBoxBehnkenDesign.t('randomseeds'),
                     //required: true,
                     //min: 1,
                     max: 99999,
@@ -121,14 +91,14 @@ class createBoxBehnkenDesign extends baseModal {
             },       
             lbl1: { 
 				el: new labelVar(config, { 
-					label: localization.en.lbl1, 
+					label: createBoxBehnkenDesign.t('lbl1'), 
 					style: "mt-3",
 					h: 6 
 				}) 
 			},
 			randomizationChk: { 
 				el: new checkbox(config, { 
-					label: localization.en.randomizationChk, 
+					label: createBoxBehnkenDesign.t('randomizationChk'), 
 					no: "randomizationChk", 
 					extraction: "Boolean",
 					state: "checked",
@@ -149,14 +119,23 @@ class createBoxBehnkenDesign extends baseModal {
 				],
     
             nav: {
-                name: localization.en.navigation,
+                name: createBoxBehnkenDesign.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: createBoxBehnkenDesign.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: createBoxBehnkenDesign.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new createBoxBehnkenDesign().render()
+
+module.exports = {
+    render: () => new createBoxBehnkenDesign().render()
+}

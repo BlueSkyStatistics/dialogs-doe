@@ -1,53 +1,14 @@
-var localization = {
-    en: {
-        title: "Browse the Orthogonal Array (oacat) design catalog",
-        navigation: "Browse Orthogonal Design Catalog",
-		
-		/*
-		show.oas(name = "all", nruns = "all", nlevels = "all", factors = "all", 
-		regular = "all", GRgt3 = c("all", "tot", "ind"), Rgt3 = FALSE, show = 10, 
-		parents.only = FALSE, showGRs = FALSE, showmetrics = FALSE, digits = 3)
-		*/
 
-		// designCatalog: "Name of the Design Catalog (must be an object of class catlg)",
-        
-		designNamefromCatalog: "Name of the Orthogonal Array design in the catalog (e.g. L18.3.6.6.1)",
-
-        numRuns: "Number of runs or a 2-element vector e.g. 4,16 with a minimum and maximum for the number of runs",
-		
-		numFactors: "Number of factors (seperate them by , e.g. 4,2,1)",
-		
-		numLevels: "Number of levels (seperate them by , e.g. 3,2,5)",
-
-        showQualityMetricsChk: "Show all array quality metrics with the resulting arrays;",
-		
-		maxDigits: "Significant digits to show for GR and A metrics",
-		
-		maxNumberofDesignPrint: "Show maximum number of designs",
-		
-		help: {
-            title: "Browse the Orthogonal Array (oacat) design catalog",
-            r_help: "help(show.oas, package = DoE.base)",
-			body: `
-				<b>Description</b></br>
-				Browse/Inspect design elements or extract information from the list of available orthogonal arrays, optionally specifying selection criteria
-				<br/>
-				<br/>
-				For the detail help - use R help(show.oas, package = DoE.base)
-				<br/>
-				
-			`
-		},
-		
-    }
-}
 
 
 class inspectOADesignCatalog extends baseModal {
+    static dialogId = 'inspectOADesignCatalog'
+    static t = baseModal.makeT(inspectOADesignCatalog.dialogId)
+
     constructor() {
         var config = {
-            id: "inspectOADesignCatalog",
-            label: localization.en.title,
+            id: inspectOADesignCatalog.dialogId,
+            label: inspectOADesignCatalog.t('title'),
             modalType: "one",
             RCode: `
 				require(DoE.base)
@@ -82,7 +43,7 @@ class inspectOADesignCatalog extends baseModal {
 			designNamefromCatalog: {
                 el: new input(config, {
                     no: 'designNamefromCatalog',
-                    label: localization.en.designNamefromCatalog,
+                    label: inspectOADesignCatalog.t('designNamefromCatalog'),
 					allow_spaces:true,
                     placeholder: "",
                     required: true,
@@ -94,7 +55,7 @@ class inspectOADesignCatalog extends baseModal {
 			numRuns: {
                 el: new input(config, {
                     no: 'numRuns',
-                    label: localization.en.numRuns,
+                    label: inspectOADesignCatalog.t('numRuns'),
 					allow_spaces:true,
                     placeholder: "",
                     required: true,
@@ -106,7 +67,7 @@ class inspectOADesignCatalog extends baseModal {
 			numFactors: {
                 el: new input(config, {
                     no: 'numFactors',
-                    label: localization.en.numFactors,
+                    label: inspectOADesignCatalog.t('numFactors'),
 					allow_spaces:true,
                     placeholder: "",
                     required: true,
@@ -119,7 +80,7 @@ class inspectOADesignCatalog extends baseModal {
 			numLevels: {
                 el: new input(config, {
                     no: 'numLevels',
-                    label: localization.en.numLevels,
+                    label: inspectOADesignCatalog.t('numLevels'),
 					allow_spaces:true,
                     placeholder: "",
                     required: true,
@@ -132,7 +93,7 @@ class inspectOADesignCatalog extends baseModal {
 			maxDigits: {
                 el: new inputSpinner(config, {
                     no: 'maxDigits',
-                    label: localization.en.maxDigits,
+                    label: inspectOADesignCatalog.t('maxDigits'),
                     //required: true,
                     min: 0,
                     max: 99,
@@ -144,7 +105,7 @@ class inspectOADesignCatalog extends baseModal {
             }, 	
            showQualityMetricsChk: { 
 				el: new checkbox(config, { 
-				label: localization.en.showQualityMetricsChk, 
+				label: inspectOADesignCatalog.t('showQualityMetricsChk'), 
 				no: "showQualityMetricsChk", 
 				extraction: "Boolean", 
 				newline: true,
@@ -153,7 +114,7 @@ class inspectOADesignCatalog extends baseModal {
 			maxNumberofDesignPrint: {
                 el: new inputSpinner(config, {
                     no: 'maxNumberofDesignPrint',
-                    label: localization.en.maxNumberofDesignPrint,
+                    label: inspectOADesignCatalog.t('maxNumberofDesignPrint'),
                     required: true,
                     min: 1,
                     max: 99,
@@ -173,14 +134,23 @@ class inspectOADesignCatalog extends baseModal {
 					 //objects.maxDigits.el.content,
                      objects.maxNumberofDesignPrint.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: inspectOADesignCatalog.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: inspectOADesignCatalog.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: inspectOADesignCatalog.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new inspectOADesignCatalog().render()
+
+module.exports = {
+    render: () => new inspectOADesignCatalog().render()
+}

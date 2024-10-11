@@ -1,49 +1,15 @@
 
-var localization = {
-    en: {
-        title: "Create Taguchi Style Inner-Outer Parameter Design",
-        navigation: "Create Taguchi Parameter Design",
-        datasetname: "Design name",
-        inner: "Inner Design (must have been randomized already)",
-        outer: "Outer Design",
-		lbl1 : "Direction - Generate Design in Long or Wide format",
-		directionLongrad: "Long format",
-        directionWiderad: "Wide format",
-		responses: "Leave it blank or specify one or more response names (separated by comma without any quote or space in between names)",
-		
-		help: {
-            title: "Create Taguchi Style Inner-Outer Parameter Design",
-            r_help: "help(param.design, package = DoE.base)",
-			body: `
-				<b>Description</b></br>
-				param.design function to generate Taguchi style parameter designs. It creates parameter designs for signal-to-noise investigations with inner and outer arrays and facilitate their formatting and data aggregation. The experiment crosses the control factors in the “inner array” with the noise factors in the “outer array”.
-				<br/>
-				<br/>
-				For the detail help - use R help(param.design, package = DoE.base)
-				<br/>
-				<br/>
-				To try this, you may use the sample dataset file called factor_grid_twolevel_screen_Design.xlsx. Open the file in the data grid with file open menu
-				<br/>
-				<br/>
-				1. Create a full factorial design with design name FFinnerRandom with the selected factors - AirVolume, Valve, Barrel, and Angle and check the "Randomize the design generation" box
-				<br/>
-				2. Create an orthogonal array design with design name FFouter with the selected factors - WadType','Voltage','BallType'
-				<br/>
-				3. Create a Taguchi design (this dialog/UI) and select the FFinnerRandom and FFouter designs already created in step 1 and step 2
-				<br/>
-				
-			`
-		},
-		
-    }
-}
+
 
 
 class createTaguchiParameterDesign extends baseModal {
+    static dialogId = 'createTaguchiParameterDesign'
+    static t = baseModal.makeT(createTaguchiParameterDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "createTaguchiParameterDesign",
-            label: localization.en.title,
+            id: createTaguchiParameterDesign.dialogId,
+            label: createTaguchiParameterDesign.t('title'),
             modalType: "two",
             RCode: `
 
@@ -77,7 +43,7 @@ class createTaguchiParameterDesign extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: localization.en.datasetname,
+                    label: createTaguchiParameterDesign.t('datasetname'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -88,7 +54,7 @@ class createTaguchiParameterDesign extends baseModal {
             },
             inner: {
                 el: new dstVariable(config, {
-                    label: localization.en.inner,
+                    label: createTaguchiParameterDesign.t('inner'),
                     no: "inner",
                     filter: "Dataset",
                     //extraction: "UseComma|Enclosed",
@@ -98,7 +64,7 @@ class createTaguchiParameterDesign extends baseModal {
             },
             outer: {
                 el: new dstVariable(config, {
-                    label: localization.en.outer,
+                    label: createTaguchiParameterDesign.t('outer'),
                     no: "outer",
                     filter: "Dataset",
                     //extraction: "UseComma|Enclosed",
@@ -109,7 +75,7 @@ class createTaguchiParameterDesign extends baseModal {
             /* direction: {
                 el: new comboBox(config, {
                     no: 'direction',
-                    label: localization.en.direction,
+                    label: createTaguchiParameterDesign.t('direction'),
                     multiple: false,
                     extraction: "NoPrefix|UseComma",
                     options: ["long", "wide"],
@@ -118,14 +84,14 @@ class createTaguchiParameterDesign extends baseModal {
             }, */
 			lbl1: { 
 				el: new labelVar(config, { 
-					label: localization.en.lbl1, 
+					label: createTaguchiParameterDesign.t('lbl1'), 
 					style: "mt-3",
 					h: 6,
 				}) 
 			},
 			directionLongrad: { 
 				el: new radioButton(config, { 
-					label: localization.en.directionLongrad, 
+					label: createTaguchiParameterDesign.t('directionLongrad'), 
 					no: "directiongp", 
 					increment: "directionLongrad", 
 					value: "long", 
@@ -136,7 +102,7 @@ class createTaguchiParameterDesign extends baseModal {
 			},
             directionWiderad: { 
 				el: new radioButton(config, { 
-					label: localization.en.directionWiderad, 
+					label: createTaguchiParameterDesign.t('directionWiderad'), 
 					no: "directiongp", 
 					increment: "directionWiderad", 
 					value: "wide", 
@@ -148,7 +114,7 @@ class createTaguchiParameterDesign extends baseModal {
 			responses: {
                 el: new input(config, {
                     no: 'responses',
-                    label: localization.en.responses,
+                    label: createTaguchiParameterDesign.t('responses'),
 					allow_spaces:true,
                     placeholder: "",
                     extraction: "CreateArray",
@@ -166,13 +132,22 @@ class createTaguchiParameterDesign extends baseModal {
                 objects.directionLongrad.el.content, objects.directionWiderad.el.content,
 				objects.responses.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: createTaguchiParameterDesign.t('navigation'),
                 icon: "icon-doe",
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: createTaguchiParameterDesign.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: createTaguchiParameterDesign.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new createTaguchiParameterDesign().render()
+
+module.exports = {
+    render: () => new createTaguchiParameterDesign().render()
+}

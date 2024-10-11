@@ -1,30 +1,13 @@
 
-var localization = {
-    en: {
-        title: "Add/Remove Response Variable(s) - first check the list of exsiting response variables with the DOE -> Inspect Design menu",
-        navigation: "Add/Remove Response",
-        subsetvars: "Select response variables",
-		
-		help: {
-            title: "Add/Remove Response Variable(s)",
-            r_help: "help(response.names, package = DoE.base)",
-			body: `
-				<b>Description</b></br>
-				To designate one or more variables to be response variable(s) for the design 
-				<br/>
-				<br/>
-				For the detail help - use R help(response.names, package = DoE.base)
-				<br/>
-				
-			`
-		},
-    }
-}
+
 class addRemoveResp extends baseModal {
+    static dialogId = 'addRemoveResp'
+    static t = baseModal.makeT(addRemoveResp.dialogId)
+
     constructor() {
         var config = {
-            id: "addRemoveResp",
-            label: localization.en.title,
+            id: addRemoveResp.dialogId,
+            label: addRemoveResp.t('title'),
             modalType: "two",
             RCode: `
 			require(DoE.base)
@@ -36,7 +19,7 @@ class addRemoveResp extends baseModal {
             content_var: { el: new srcVariableList(config, {action: "move"}) },
             subsetvars: {
                 el: new dstVariableList(config, {
-                    label: localization.en.subsetvars,
+                    label: addRemoveResp.t('subsetvars'),
                     no: "subsetvars",
                     filter: "String|Numeric|Date|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma|Enclosed",
@@ -48,13 +31,22 @@ class addRemoveResp extends baseModal {
             left: [objects.content_var.el.content],
             right: [objects.subsetvars.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: addRemoveResp.t('navigation'),
                 icon: "icon-doe",
                 modal: config.id
             }
         }
         super(config, objects, content);
-        this.help = localization.en.help;
+        
+        this.help = {
+            title: addRemoveResp.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: addRemoveResp.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new addRemoveResp().render()
+
+module.exports = {
+    render: () => new addRemoveResp().render()
+}

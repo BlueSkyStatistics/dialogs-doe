@@ -1,52 +1,14 @@
-var localization = {
-    en: {
-        title: "Create Orthogonal Array Design",
-        navigation: "Create Orthogonal Array Design",
-        selectedvars: "Select variables",
-        datasetname: "Design name",
 
-        // lblheading: "Size and randomization",
-        numOfRuns: "Minimum number of runs (can be left blank)",
-
-        minNumOfResidual: "Minimum number of residual degrees of freedom",
-        replications: "Replications",
-        repeatOnlyChk:"Repeat only",
-
-        lbl1 : "You may not need to change the randomization settings",
-        randomseeds : "Seed for randomization",
-        randomizationChk:"Randomize the design generation",
-		
-		designnamefromcatlg : "(Optional) Orthogonal design array(example: from oacat$name as L12.2.2.6.1)",
-		columnOptimization: "Column optimization (default is order, other choices min3, min34, min3.rela, min34.rela, minRPFT, minRelProjAberr",
-		
-		help: {
-            title: "Create Orthogonal Array Design",
-            r_help: "help(oa.design, package = DoE.base)",
-			body: `
-				<b>Description</b></br>
-				oa.design function for accessing orthogonal arrays, allowing limited optimal allocation of columns
-				<br/>
-				<br/>
-				For the detail help - use R help(oa.design, package = DoE.base)
-				<br/>
-				<br/>
-				Use the menu DOE->Inpect Design->Inspect Orthogonal Design Catalog (oacat) to browse avaiable Orthogonal Designs to reference from the loaded design catalog in DoE.base package
-				<br/>
-				<br/>
-				To try this, you may use the sample dataset file called factor_grid_orthogonal_array_Design.xlsx. Open the file in the data grid with file open menu
-				Optionally, you can specify L72.2.53.3.2.4.1 as the design from oacat$name 
-				<br/>
-			`
-		},
-    }
-}
 
 
 class createOrthogonalArrayDesign extends baseModal {
+    static dialogId = 'createOrthogonalArrayDesign'
+    static t = baseModal.makeT(createOrthogonalArrayDesign.dialogId)
+
     constructor() {
         var config = {
-            id: "createOrthogonalArrayDesign",
-            label: localization.en.title,
+            id: createOrthogonalArrayDesign.dialogId,
+            label: createOrthogonalArrayDesign.t('title'),
             modalType: "two",
             RCode: `
             require(DoE.base)
@@ -105,7 +67,7 @@ class createOrthogonalArrayDesign extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: localization.en.datasetname,
+                    label: createOrthogonalArrayDesign.t('datasetname'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -115,7 +77,7 @@ class createOrthogonalArrayDesign extends baseModal {
             },
             selectedvars: {
                 el: new dstVariableList(config, {
-                    label: localization.en.selectedvars,
+                    label: createOrthogonalArrayDesign.t('selectedvars'),
                     no: "selectedvars",
                     filter: "String|Numeric|Date|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma|Enclosed",
@@ -125,7 +87,7 @@ class createOrthogonalArrayDesign extends baseModal {
 			numOfRuns: {
                 el: new input(config, {
                     no: 'numOfRuns',
-                    label: localization.en.numOfRuns,
+                    label: createOrthogonalArrayDesign.t('numOfRuns'),
 					allow_spaces:true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -137,7 +99,7 @@ class createOrthogonalArrayDesign extends baseModal {
             minNumOfResidual: {
                 el: new inputSpinner(config, {
                     no: 'minNumOfResidual',
-                    label: localization.en.minNumOfResidual,
+                    label: createOrthogonalArrayDesign.t('minNumOfResidual'),
                     required: true,
                     min: 0,
                     max: 9999999,
@@ -148,7 +110,7 @@ class createOrthogonalArrayDesign extends baseModal {
             replications: {
                 el: new inputSpinner(config, {
                     no: 'replications',
-                    label: localization.en.replications,
+                    label: createOrthogonalArrayDesign.t('replications'),
                     required: true,
                     min: 1,
                     max: 9999999,
@@ -159,7 +121,7 @@ class createOrthogonalArrayDesign extends baseModal {
             randomseeds: {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
-                    label: localization.en.randomseeds,
+                    label: createOrthogonalArrayDesign.t('randomseeds'),
                     //required: true,
                     //min: 1,
                     max: 99999,
@@ -171,7 +133,7 @@ class createOrthogonalArrayDesign extends baseModal {
 			designnamefromcatlg: {
                 el: new input(config, {
                     no: 'designnamefromcatlg',
-                    label: localization.en.designnamefromcatlg,
+                    label: createOrthogonalArrayDesign.t('designnamefromcatlg'),
 					allow_spaces:true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -182,7 +144,7 @@ class createOrthogonalArrayDesign extends baseModal {
 			columnOptimization: {
                 el: new input(config, {
                     no: 'columnOptimization',
-                    label: localization.en.columnOptimization,
+                    label: createOrthogonalArrayDesign.t('columnOptimization'),
 					allow_spaces:true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -190,13 +152,13 @@ class createOrthogonalArrayDesign extends baseModal {
 					style: "mb-1",
                 })
             },
-            // lblheading: { el: new labelVar(config, { label: localization.en.lblheading, style: "mt-3",h: 5 }) },
-            lbl1: { el: new labelVar(config, { label: localization.en.lbl1, style: "mt-3",h: 6 }) },
+            // lblheading: { el: new labelVar(config, { label: createOrthogonalArrayDesign.t('lblheading'), style: "mt-3",h: 5 }) },
+            lbl1: { el: new labelVar(config, { label: createOrthogonalArrayDesign.t('lbl1'), style: "mt-3",h: 6 }) },
            
-            repeatOnlyChk: { el: new checkbox(config, { label: localization.en.repeatOnlyChk, no: "repeatOnlyChk", style: "ml-5", extraction: "Boolean", newline: false }) },
+            repeatOnlyChk: { el: new checkbox(config, { label: createOrthogonalArrayDesign.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ml-5", extraction: "Boolean", newline: false }) },
             randomizationChk: { 
 				el: new checkbox(config, { 
-					label: localization.en.randomizationChk, 
+					label: createOrthogonalArrayDesign.t('randomizationChk'), 
 					no: "randomizationChk", 
 					//style: "ml-5", 
 					state: "checked", 
@@ -217,14 +179,23 @@ class createOrthogonalArrayDesign extends baseModal {
 				objects.designnamefromcatlg.el.content,
 				objects.columnOptimization.el.content], 
             nav: {
-                name: localization.en.navigation,
+                name: createOrthogonalArrayDesign.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: createOrthogonalArrayDesign.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: createOrthogonalArrayDesign.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new createOrthogonalArrayDesign().render()
+
+module.exports = {
+    render: () => new createOrthogonalArrayDesign().render()
+}

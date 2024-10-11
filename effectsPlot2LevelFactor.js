@@ -1,36 +1,15 @@
 
-var localization = {
-    en: {
-        title: "Daniel Plot - Effects Normal (or Half) Plot for 2 Level Factor",
-        navigation: "Half Normal Plot for 2 Level",
-        respVar: "Response variable(select one)",
-        halfChk:"Half normal plot",
-        codeChk:"Label effects with codes instead of names",
-        alpha: "Enter significance level for labelling",
-        autolabChk:"Label significant effects only",
-		
-		help: {
-            title: "Daniel Plot - Effects Normal (or Half) Plot for 2 Level Factor",
-            r_help: "help(DanielPlot, package = FrF2)",
-			body: `
-				<b>Description</b></br>
-				Normal or Half-Normal Effects Plots for response variable  
-				<br/>
-				<br/>
-				For the detail help - use R help(DanielPlot, package = FrF2)
-				<br/>
-				
-			`
-		},
-    }
-}
+
 
 
 class effectsPlot2LevelFactor extends baseModal {
+    static dialogId = 'effectsPlot2LevelFactor'
+    static t = baseModal.makeT(effectsPlot2LevelFactor.dialogId)
+
     constructor() {
         var config = {
-            id: "effectsPlot2LevelFactor",
-            label: localization.en.title,
+            id: effectsPlot2LevelFactor.dialogId,
+            label: effectsPlot2LevelFactor.t('title'),
             modalType: "two",
             RCode: `
                 FrF2::DanielPlot({{dataset.name}}, code={{selected.codeChk | safe}}, autolab={{selected.autolabChk | safe}}, alpha={{selected.alpha | safe}}, half={{selected.halfChk | safe}},
@@ -41,7 +20,7 @@ class effectsPlot2LevelFactor extends baseModal {
             content_var: { el: new srcVariableList(config, {action: "move"}) },
             respVar: {
                 el: new dstVariable(config, {
-                    label: localization.en.respVar,
+                    label: effectsPlot2LevelFactor.t('respVar'),
                     no: "respVar",
                     filter: "Numeric|Scale",
                     extraction: "NoPrefix|UseComma",
@@ -51,7 +30,7 @@ class effectsPlot2LevelFactor extends baseModal {
             alpha: {
                 el: new inputSpinner(config, {
                     no: 'alpha',
-                    label: localization.en.alpha,
+                    label: effectsPlot2LevelFactor.t('alpha'),
                     min: 0,
                     max: 999,
                     step: .1,
@@ -60,9 +39,9 @@ class effectsPlot2LevelFactor extends baseModal {
                     extraction: "NoPrefix|UseComma"
                 })
             },            
-            halfChk: { el: new checkbox(config, { label: localization.en.halfChk, no: "halfChk", state:"checked", extraction: "Boolean", newline: true }) },
-            codeChk: { el: new checkbox(config, { label: localization.en.codeChk, no: "codeChk", state:"checked", extraction: "Boolean", newline: true}) },
-            autolabChk: { el: new checkbox(config, { label: localization.en.autolabChk, no: "autolabChk", state:"checked", extraction: "Boolean", newline: true}) },            
+            halfChk: { el: new checkbox(config, { label: effectsPlot2LevelFactor.t('halfChk'), no: "halfChk", state:"checked", extraction: "Boolean", newline: true }) },
+            codeChk: { el: new checkbox(config, { label: effectsPlot2LevelFactor.t('codeChk'), no: "codeChk", state:"checked", extraction: "Boolean", newline: true}) },
+            autolabChk: { el: new checkbox(config, { label: effectsPlot2LevelFactor.t('autolabChk'), no: "autolabChk", state:"checked", extraction: "Boolean", newline: true}) },            
         }
         const content = {
             left: [objects.content_var.el.content],
@@ -70,13 +49,22 @@ class effectsPlot2LevelFactor extends baseModal {
                 objects.halfChk.el.content,objects.codeChk.el.content,
                 objects.alpha.el.content,objects.autolabChk.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: effectsPlot2LevelFactor.t('navigation'),
                 icon: "icon-doe",
                 modal: config.id
             }
         }
         super(config, objects, content);
-		this.help = localization.en.help;
+		
+        this.help = {
+            title: effectsPlot2LevelFactor.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: effectsPlot2LevelFactor.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new effectsPlot2LevelFactor().render()
+
+module.exports = {
+    render: () => new effectsPlot2LevelFactor().render()
+}

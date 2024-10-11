@@ -1,56 +1,14 @@
 
-var localization = {
-    en: {
-        title: "Design of Experiments analysis with Response Surface Model (Quantitative)",
-        navigation: "Design Analysis - Response Surface Model",
-        modelname: "Enter Response Surface model name",
-        dependent: "Response (dependent) variable",
-        formulaboxhint: "You can also enter SO(var1, var2,...) for second-order effects and interactions, or FO(...),... from rsm pkg in the above formula builder box.",
-        independent:"Numeric Predictors - insert below the numeric formula variables",
-        generateContourPlotChk: "Display Contour(plots)",
-		generateRSMPlotChk: "Display Response Surface (plots)",
-		generatePathSteepestAscentChk: "Show path of steepest ascent from ridge analysis",
-		checkShapiroNormalityTestChk: "Shapiro normality test",
-		normalityPlotsChk: "Plot for checking normality",
 
-        help: {
-				title: "Response Surface Model with a model formula builder",
-				r_help: "help(rsm, package = rsm)",
-				body: `
-				<b>Description</b></br>
-				Response-surface regression - fit a linear model with a response-surface component, and produce appropriate analyses and summaries
-				<br/> In the formula builder, you can type SO(var1, var2, var3, ...) or FO(var1, ..) or other function from the rsm package - help(SO, package =rsm)
-				<br/>
-				<br/>
-				For more details, see R help for the following
-				<br/>
-				help(rsm, package = rsm)
-				<br/>
-				help(SO, package = rsm)
-				<br/>
-				help(FO, package = rsm)
-				<br/>
-				help(contour, package = graphics) 
-				<br/>
-				help(persp, package = graphics) 
-				<br/>
-				help(steepest, package = rsm)  
-				<br/>
-				help(shapiro.test, package = stats)  
-				<br/>
-				help(qqnorm, package = stats)  
-				<br/>
-
-			`
-		}
-    }
-}
 
 class RSMFormula extends baseModal {
+    static dialogId = 'RSMFormula'
+    static t = baseModal.makeT(RSMFormula.dialogId)
+
     constructor() {
         var config = {
-            id: "RSMFormula",
-            label: localization.en.title,
+            id: RSMFormula.dialogId,
+            label: RSMFormula.t('title'),
             modalType: "two",
             RCode: `
 #require(FrF2)
@@ -112,7 +70,7 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
             modelname: {
                 el: new input(config, {
                     no: 'modelname',
-                    label: localization.en.modelname,
+                    label: RSMFormula.t('modelname'),
                     placeholder: "",
                     required: true,
                     type: "character",
@@ -123,7 +81,7 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
             },
             dependent: {
                 el: new dstVariable(config, {
-                    label: localization.en.dependent,
+                    label: RSMFormula.t('dependent'),
                     no: "dependent",
                     filter: "Numeric|Scale",
                     extraction: "NoPrefix|UseComma",
@@ -140,14 +98,14 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
             },
 			formulaboxhint: { 
 				el: new labelVar(config, { 
-					label: localization.en.formulaboxhint, 
+					label: RSMFormula.t('formulaboxhint'), 
 					style: "ml-5 mb-3", 
 					h: 6,
 				}) 
 			},
 			independent: {
                 el: new dstVariableList(config, {
-                    label: localization.en.independent,
+                    label: RSMFormula.t('independent'),
                     no: "independent",
                     required: true,
                     //filter: "String|Numeric|Logical|Ordinal|Nominal|Scale",
@@ -158,7 +116,7 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
             },            
             generateContourPlotChk: {
                 el: new checkbox(config, {
-                    label: localization.en.generateContourPlotChk, 
+                    label: RSMFormula.t('generateContourPlotChk'), 
 					no: "generateContourPlotChk",
                     bs_type: "valuebox",
                     style: "mt-2 mb-3",
@@ -170,7 +128,7 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
             },
 			generateRSMPlotChk: {
                 el: new checkbox(config, {
-                    label: localization.en.generateRSMPlotChk, 
+                    label: RSMFormula.t('generateRSMPlotChk'), 
 					no: "generateRSMPlotChk",
                     bs_type: "valuebox",
                     style: "mt-2 mb-3",
@@ -182,7 +140,7 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
             },
 			generatePathSteepestAscentChk: {
                 el: new checkbox(config, {
-                    label: localization.en.generatePathSteepestAscentChk, 
+                    label: RSMFormula.t('generatePathSteepestAscentChk'), 
 					no: "generatePathSteepestAscentChk",
                     bs_type: "valuebox",
                     style: "mt-2 mb-3",
@@ -194,7 +152,7 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
             },
 			checkShapiroNormalityTestChk: {
                 el: new checkbox(config, {
-                    label: localization.en.checkShapiroNormalityTestChk, 
+                    label: RSMFormula.t('checkShapiroNormalityTestChk'), 
 					no: "checkShapiroNormalityTestChk",
                     bs_type: "valuebox",
                     style: "mt-2 mb-3",
@@ -206,7 +164,7 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
             },
 			normalityPlotsChk: {
                 el: new checkbox(config, {
-                    label: localization.en.normalityPlotsChk, 
+                    label: RSMFormula.t('normalityPlotsChk'), 
 					no: "normalityPlotsChk",
                     bs_type: "valuebox",
                     style: "mt-2 mb-3",
@@ -230,13 +188,22 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
 					objects.checkShapiroNormalityTestChk.el.content, 
 					objects.normalityPlotsChk.el.content],
             nav: {
-                name: localization.en.navigation,
+                name: RSMFormula.t('navigation'),
                 icon: "icon-doe",
                 modal: config.id
             }
         };
         super(config, objects, content);
-        this.help = localization.en.help;
+        
+        this.help = {
+            title: RSMFormula.t('help.title'),
+            r_help: "help(data,package='utils')",
+            body: RSMFormula.t('help.body')
+        }
+;
     }
 }
-module.exports.item = new RSMFormula().render()
+
+module.exports = {
+    render: () => new RSMFormula().render()
+}
