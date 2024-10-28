@@ -1,14 +1,14 @@
 
 
-
-class createDoEgrid extends baseModal {
-    static dialogId = 'createDoEgrid'
-    static t = baseModal.makeT(createDoEgrid.dialogId)
+/*createDoEgrid*/
+class createDoEFactorTable2 extends baseModal {
+    static dialogId = 'createDoEFactorTable2'
+    static t = baseModal.makeT(createDoEFactorTable2.dialogId)
 
     constructor() {
         var config = {
-            id: createDoEgrid.dialogId,
-            label: createDoEgrid.t('title'),
+            id: createDoEFactorTable2.dialogId,
+            label: createDoEFactorTable2.t('title'),
             modalType: "one",
             RCode: `
 			
@@ -79,7 +79,7 @@ class createDoEgrid extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: createDoEgrid.t('datasetname'),
+                    label: createDoEFactorTable2.t('datasetname'),
                     placeholder: "",
                     //required: true,
                     extraction: "TextAsIs",
@@ -90,7 +90,7 @@ class createDoEgrid extends baseModal {
             
 			label1: { 
 				el: new labelVar(config, { 
-					label: createDoEgrid.t('label1'), 
+					label: createDoEFactorTable2.t('label1'), 
 					h: 6, 
 					//style: "mb-2",
 				}) 
@@ -98,7 +98,7 @@ class createDoEgrid extends baseModal {
 			factor1: {
                 el: new input(config, {
                     no: 'factor1',
-                    label: createDoEgrid.t('factor1'),
+                    label: createDoEFactorTable2.t('factor1'),
                     //required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -111,7 +111,7 @@ class createDoEgrid extends baseModal {
             numOfFactorLevels1: {
                 el: new input(config, {
                     no: 'numOfFactorLevels1',
-                    label: createDoEgrid.t('numOfFactorLevels1'),
+                    label: createDoEFactorTable2.t('numOfFactorLevels1'),
                     required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -124,7 +124,7 @@ class createDoEgrid extends baseModal {
             factorLevels1: {
                 el: new input(config, {
                     no: 'factorLevels1',
-                    label: createDoEgrid.t('factorLevels1'),
+                    label: createDoEFactorTable2.t('factorLevels1'),
                     //required: true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -136,7 +136,7 @@ class createDoEgrid extends baseModal {
 			prefixForfactorLevels1: {
                 el: new input(config, {
                     no: 'prefixForfactorLevels1',
-                    label: createDoEgrid.t('prefixForfactorLevels1'),
+                    label: createDoEFactorTable2.t('prefixForfactorLevels1'),
                     //required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -149,7 +149,7 @@ class createDoEgrid extends baseModal {
 			
 			label2: { 
 				el: new labelVar(config, { 
-					label: createDoEgrid.t('label2'), 
+					label: createDoEFactorTable2.t('label2'), 
 					h: 6, 
 					//style: "mb-2",
 				}) 
@@ -157,7 +157,7 @@ class createDoEgrid extends baseModal {
 			factor2: {
                 el: new input(config, {
                     no: 'factor2',
-                    label: createDoEgrid.t('factor2'),
+                    label: createDoEFactorTable2.t('factor2'),
                     //required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -170,7 +170,7 @@ class createDoEgrid extends baseModal {
             numOfFactorLevels2: {
                 el: new input(config, {
                     no: 'numOfFactorLevels2',
-                    label: createDoEgrid.t('numOfFactorLevels2'),
+                    label: createDoEFactorTable2.t('numOfFactorLevels2'),
                     required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -183,7 +183,7 @@ class createDoEgrid extends baseModal {
             factorLevels2: {
                 el: new input(config, {
                     no: 'factorLevels2',
-                    label: createDoEgrid.t('factorLevels2'),
+                    label: createDoEFactorTable2.t('factorLevels2'),
                     //required: true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -195,7 +195,7 @@ class createDoEgrid extends baseModal {
 			prefixForfactorLevels2: {
                 el: new input(config, {
                     no: 'prefixForfactorLevels2',
-                    label: createDoEgrid.t('prefixForfactorLevels2'),
+                    label: createDoEFactorTable2.t('prefixForfactorLevels2'),
                     //required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -208,7 +208,7 @@ class createDoEgrid extends baseModal {
 			
 			label3: { 
 				el: new labelVar(config, { 
-					label: createDoEgrid.t('label3'), 
+					label: createDoEFactorTable2.t('label3'), 
 					h: 6, 
 					//style: "mb-2",
 				}) 
@@ -216,7 +216,7 @@ class createDoEgrid extends baseModal {
 			factor3: {
                 el: new input(config, {
                     no: 'factor3',
-                    label: createDoEgrid.t('factor3'),
+                    label: createDoEFactorTable2.t('factor3'),
                     //required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -229,7 +229,7 @@ class createDoEgrid extends baseModal {
             numOfFactorLevels3: {
                 el: new input(config, {
                     no: 'numOfFactorLevels3',
-                    label: createDoEgrid.t('numOfFactorLevels3'),
+                    label: createDoEFactorTable2.t('numOfFactorLevels3'),
                     required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -242,7 +242,7 @@ class createDoEgrid extends baseModal {
             factorLevels3: {
                 el: new input(config, {
                     no: 'factorLevels3',
-                    label: createDoEgrid.t('factorLevels3'),
+                    label: createDoEFactorTable2.t('factorLevels3'),
                     //required: true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -254,7 +254,7 @@ class createDoEgrid extends baseModal {
 			prefixForfactorLevels3: {
                 el: new input(config, {
                     no: 'prefixForfactorLevels3',
-                    label: createDoEgrid.t('prefixForfactorLevels3'),
+                    label: createDoEFactorTable2.t('prefixForfactorLevels3'),
                     //required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -267,7 +267,7 @@ class createDoEgrid extends baseModal {
 			
 			label4: { 
 				el: new labelVar(config, { 
-					label: createDoEgrid.t('label4'), 
+					label: createDoEFactorTable2.t('label4'), 
 					h: 6, 
 					//style: "mb-2",
 				}) 
@@ -275,7 +275,7 @@ class createDoEgrid extends baseModal {
 			factor4: {
                 el: new input(config, {
                     no: 'factor4',
-                    label: createDoEgrid.t('factor4'),
+                    label: createDoEFactorTable2.t('factor4'),
                     //required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -288,7 +288,7 @@ class createDoEgrid extends baseModal {
             numOfFactorLevels4: {
                 el: new input(config, {
                     no: 'numOfFactorLevels4',
-                    label: createDoEgrid.t('numOfFactorLevels4'),
+                    label: createDoEFactorTable2.t('numOfFactorLevels4'),
                     required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -301,7 +301,7 @@ class createDoEgrid extends baseModal {
             factorLevels4: {
                 el: new input(config, {
                     no: 'factorLevels4',
-                    label: createDoEgrid.t('factorLevels4'),
+                    label: createDoEFactorTable2.t('factorLevels4'),
                     //required: true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -313,7 +313,7 @@ class createDoEgrid extends baseModal {
 			prefixForfactorLevels4: {
                 el: new input(config, {
                     no: 'prefixForfactorLevels4',
-                    label: createDoEgrid.t('prefixForfactorLevels4'),
+                    label: createDoEFactorTable2.t('prefixForfactorLevels4'),
                     //required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -326,7 +326,7 @@ class createDoEgrid extends baseModal {
 			
 			label5: { 
 				el: new labelVar(config, { 
-					label: createDoEgrid.t('label5'), 
+					label: createDoEFactorTable2.t('label5'), 
 					h: 6, 
 					//style: "mb-2",
 				}) 
@@ -334,7 +334,7 @@ class createDoEgrid extends baseModal {
 			factor5: {
                 el: new input(config, {
                     no: 'factor5',
-                    label: createDoEgrid.t('factor5'),
+                    label: createDoEFactorTable2.t('factor5'),
                     //required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -347,7 +347,7 @@ class createDoEgrid extends baseModal {
             numOfFactorLevels5: {
                 el: new input(config, {
                     no: 'numOfFactorLevels5',
-                    label: createDoEgrid.t('numOfFactorLevels5'),
+                    label: createDoEFactorTable2.t('numOfFactorLevels5'),
                     required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -360,7 +360,7 @@ class createDoEgrid extends baseModal {
             factorLevels5: {
                 el: new input(config, {
                     no: 'factorLevels5',
-                    label: createDoEgrid.t('factorLevels5'),
+                    label: createDoEFactorTable2.t('factorLevels5'),
                     //required: true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -372,7 +372,7 @@ class createDoEgrid extends baseModal {
 			prefixForfactorLevels5: {
                 el: new input(config, {
                     no: 'prefixForfactorLevels5',
-                    label: createDoEgrid.t('prefixForfactorLevels5'),
+                    label: createDoEFactorTable2.t('prefixForfactorLevels5'),
                     //required: true,
                     placeholder: "",
                     allow_spaces:true,
@@ -385,7 +385,7 @@ class createDoEgrid extends baseModal {
 			
             chkbxAutofill: { 
 				el: new checkbox(config, { 
-					label: createDoEgrid.t('autoFillChkbx'), 
+					label: createDoEFactorTable2.t('autoFillChkbx'), 
 					no: "chkbxAutofill", 
 					state:"checked", 
 					extraction: "Boolean", 
@@ -395,21 +395,21 @@ class createDoEgrid extends baseModal {
 			},
 			label1: { 
 				el: new labelVar(config, { 
-					label: createDoEgrid.t('label1'), 
+					label: createDoEFactorTable2.t('label1'), 
 					style: "mt-2", 
 					h: 6,
 				}) 
 			},
             
-			convertFactorToCharInt: { 
+			/*convertFactorToCharInt: { 
 				el: new checkbox(config, { 
-					label: createDoEgrid.t('convertFactorToCharInt'), 
+					label: createDoEFactorTable2.t('convertFactorToCharInt'), 
 					no: "convertFactorToCharInt", 
 					//state:"checked", 
 					extraction: "Boolean", 
 					newline: true,
 				}) 
-			},
+			},*/
 	   }
         const content = {
             items: [objects.datasetname.el.content,  
@@ -449,7 +449,7 @@ class createDoEgrid extends baseModal {
 				//objects.convertFactorToCharInt.el.content,
 				],
             nav: {
-                name: createDoEgrid.t('navigation'),
+                name: createDoEFactorTable2.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
@@ -458,14 +458,14 @@ class createDoEgrid extends baseModal {
         super(config, objects, content);
 		
         this.help = {
-            title: createDoEgrid.t('help.title'),
+            title: createDoEFactorTable2.t('help.title'),
             r_help: "help(data,package='utils')",
-            body: createDoEgrid.t('help.body')
+            body: createDoEFactorTable2.t('help.body')
         }
 ;
     }
 }
 
 module.exports = {
-    render: () => new createDoEgrid().render()
+    render: () => new createDoEFactorTable2().render()
 }

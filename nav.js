@@ -35,7 +35,7 @@ const nav = {
             "icon": "icon-doe",
             "children": [
                 "./inspectDesign",
-                "./plotDesignGen",
+                "./plotDesign",
                 "./inspectFrF2DesignCatalog",
                 "./inspectOrthogonalArrayDesignCatalog" 
             ]

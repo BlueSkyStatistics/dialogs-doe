@@ -1,14 +1,14 @@
 
 
-
-class createDoEgrid extends baseModal {
-    static dialogId = 'createDoEgrid'
-    static t = baseModal.makeT(createDoEgrid.dialogId)
+/*createDoEgrid*/
+class createDoEFactorTable extends baseModal {
+    static dialogId = 'createDoEFactorTable'
+    static t = baseModal.makeT(createDoEFactorTable.dialogId)
 
     constructor() {
         var config = {
-            id: createDoEgrid.dialogId,
-            label: createDoEgrid.t('title'),
+            id: createDoEFactorTable.dialogId,
+            label: createDoEFactorTable.t('title'),
             modalType: "one",
             RCode: `
 				require(FrF2)
@@ -36,7 +36,7 @@ class createDoEgrid extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: createDoEgrid.t('datasetname'),
+                    label: createDoEFactorTable.t('datasetname'),
                     placeholder: "",
                     //required: true,
                     extraction: "TextAsIs",
@@ -47,7 +47,7 @@ class createDoEgrid extends baseModal {
             numOfVars: {
                 el: new input(config, {
                     no: 'numOfVars',
-                    label: createDoEgrid.t('numOfVars'),
+                    label: createDoEFactorTable.t('numOfVars'),
                     //required: true,
                     placeholder: "5",
                     allow_spaces:true,
@@ -59,7 +59,7 @@ class createDoEgrid extends baseModal {
             numOfFactorLevels: {
                 el: new input(config, {
                     no: 'numOfFactorLevels',
-                    label: createDoEgrid.t('numOfFactorLevels'),
+                    label: createDoEFactorTable.t('numOfFactorLevels'),
                     //required: true,
                     placeholder: "2",
                     allow_spaces:true,
@@ -71,7 +71,7 @@ class createDoEgrid extends baseModal {
             factorLevels: {
                 el: new input(config, {
                     no: 'factorLevels',
-                    label: createDoEgrid.t('factorLevels'),
+                    label: createDoEFactorTable.t('factorLevels'),
                     //required: true,
                     placeholder: "-1,1",
                     extraction: "TextAsIs",
@@ -81,7 +81,7 @@ class createDoEgrid extends baseModal {
             },
             chkbxAutofill: { 
 				el: new checkbox(config, { 
-					label: createDoEgrid.t('autoFillChkbx'), 
+					label: createDoEFactorTable.t('autoFillChkbx'), 
 					no: "chkbxAutofill", 
 					state:"checked", 
 					extraction: "Boolean", 
@@ -91,7 +91,7 @@ class createDoEgrid extends baseModal {
 			},
 			label1: { 
 				el: new labelVar(config, { 
-					label: createDoEgrid.t('label1'), 
+					label: createDoEFactorTable.t('label1'), 
 					style: "mt-2", 
 					h: 6,
 				}) 
@@ -99,7 +99,7 @@ class createDoEgrid extends baseModal {
             
 			convertFactorToCharInt: { 
 				el: new checkbox(config, { 
-					label: createDoEgrid.t('convertFactorToCharInt'), 
+					label: createDoEFactorTable.t('convertFactorToCharInt'), 
 					no: "convertFactorToCharInt", 
 					//state:"checked", 
 					extraction: "Boolean", 
@@ -114,7 +114,7 @@ class createDoEgrid extends baseModal {
 				objects.label1.el.content,
 				objects.convertFactorToCharInt.el.content],
             nav: {
-                name: createDoEgrid.t('navigation'),
+                name: createDoEFactorTable.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
@@ -123,14 +123,14 @@ class createDoEgrid extends baseModal {
         super(config, objects, content);
 		
         this.help = {
-            title: createDoEgrid.t('help.title'),
+            title: createDoEFactorTable.t('help.title'),
             r_help: "help(data,package='utils')",
-            body: createDoEgrid.t('help.body')
+            body: createDoEFactorTable.t('help.body')
         }
 ;
     }
 }
 
 module.exports = {
-    render: () => new createDoEgrid().render()
+    render: () => new createDoEFactorTable().render()
 }
