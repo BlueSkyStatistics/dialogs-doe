@@ -7,8 +7,8 @@ const nav = {
             "name": "Create DoE Factor Table",
             "icon": "icon-doe",
             "children": [
-                "./createDoEFactorTable",
-                "./createDoEFactorTable2"
+                "./createDoEgrid",
+                "./createDoEgrid2"
             ]
         },
 		
@@ -35,7 +35,7 @@ const nav = {
             "icon": "icon-doe",
             "children": [
                 "./inspectDesign",
-                "./plotDesignGen",
+                "./plotDesign",
                 "./inspectFrF2DesignCatalog",
                 "./inspectOrthogonalArrayDesignCatalog" 
             ]
