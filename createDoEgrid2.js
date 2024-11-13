@@ -63,7 +63,7 @@ var localization = {
 }
 
 
-class createDoEgrid extends baseModal {
+class createDoEgrid2 extends baseModal {
     constructor() {
         var config = {
             id: "createDoEgrid2",
@@ -518,4 +518,4 @@ class createDoEgrid extends baseModal {
 		this.help = localization.en.help;
     }
 }
-module.exports.item = new createDoEgrid().render()
+module.exports.item = new createDoEgrid2().render()
