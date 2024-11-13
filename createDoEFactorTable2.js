@@ -460,7 +460,7 @@ class createDoEgrid extends baseModal {
 				}) 
 			},
             
-			convertFactorToCharInt: { 
+			/*convertFactorToCharInt: { 
 				el: new checkbox(config, { 
 					label: localization.en.convertFactorToCharInt, 
 					no: "convertFactorToCharInt", 
