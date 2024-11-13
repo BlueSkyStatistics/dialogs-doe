@@ -3,7 +3,11 @@ var localization = {
     en: {
         title: "Plot Design (General)",
         navigation: "Plot Design (General)",
-        subsetvars: "Select variables"
+        subsetvars: "Select variables",
+        help: {
+            "title": "Plot Design",
+            "body": "..."
+          }
     }
 }
 class plotDesign extends baseModal {
