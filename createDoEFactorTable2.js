@@ -468,7 +468,7 @@ class createDoEgrid extends baseModal {
 					extraction: "Boolean", 
 					newline: true,
 				}) 
-			},
+			},*/
 	   }
         const content = {
             items: [objects.datasetname.el.content,  
