@@ -57,7 +57,7 @@ var localization = {
 }
 
 
-class createRegular2LevelDesign extends baseModal {
+class createRegularFrF2Design extends baseModal {
     constructor() {
         var config = {
             id: "createRegularFrF2Design",
@@ -314,4 +314,4 @@ class createRegular2LevelDesign extends baseModal {
 		this.help = localization.en.help;
     }
 }
-module.exports.item = new createRegular2LevelDesign().render()
+module.exports.item = new createRegularFrF2Design().render()
