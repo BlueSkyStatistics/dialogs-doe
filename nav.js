@@ -2,7 +2,7 @@ const nav = {
     "name": "DoE",
     "tab": "DoE",
     "buttons": [
-        "./DoE overview",
+        "./doeoverview",
         {
             "name": "Create DoE Factor Table",
             "icon": "icon-doe",
@@ -37,7 +37,7 @@ const nav = {
                 "./inspectDesign",
                 "./plotDesign",
                 "./inspectFrF2DesignCatalog",
-                "./inspectOrthogonalArrayDesignCatalog" 
+                "./inspectOADesignCatalog" 
             ]
         },
         {
@@ -45,7 +45,7 @@ const nav = {
             "icon": "icon-doe",
             "children": [
                 "./addRemoveResp",
-                "./AddCenterpoint2LevelDesign"						
+                "./addCenterpoint2LevelDesign"						
             ]
         },
         {
@@ -53,8 +53,8 @@ const nav = {
             "icon": "icon-doe",
             "children": [
                 "./linearRegressionDoE",
-                "./responseSurfaceModelFormula",
-                "./mainEffectsIntractionPlotsGen", 
+                "./RSMFormula",
+                "./mainEffectsIntractionPlots", 
                 "./effectsPlot2LevelFactor"
                 
             ]
