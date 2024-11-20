@@ -2,7 +2,7 @@ const nav = {
     "name": "DoE",
     "tab": "DoE",
     "buttons": [
-        "./doeoverview",
+        "./doeOverview",
         {
             "name": "Create DoE Factor Table",
             "icon": "icon-doe",
