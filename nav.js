@@ -1,14 +1,15 @@
-const nav = {
-    "name": "DoE",
+let t = getT('menutoolbar')
+const nav = () => ({
+    "name": t('doe_top_level_title'),// {ns: 'menutoolbar'}),
     "tab": "DoE",
     "buttons": [
-        "./DoE overview",
+        "./doeoverview",
         {
-            "name": "Create DoE Factor Table",
+            "name": t('doe_Create_DoE_Factor_Table'),// {ns: 'menutoolbar'}),
             "icon": "icon-doe",
             "children": [
-                "./createDoEFactorTable",
-                "./createDoEFactorTable2"
+                "./createDoEgrid",
+                "./createDoEgrid2"
             ]
         },
 		
@@ -16,7 +17,7 @@ const nav = {
         "./exportDesign",
 
         {
-            "name": "Create Design",
+            "name": t('doe_Create_Design'),// {ns: 'menutoolbar'}),
             "icon": "icon-doe",
             "children": [
                 "./create2LevelDesign",
@@ -31,30 +32,30 @@ const nav = {
             ]
         },
         {
-            "name": "Inspect Design",
+            "name": t('doe_Inspect_Design'),// {ns: 'menutoolbar'}),
             "icon": "icon-doe",
             "children": [
                 "./inspectDesign",
                 "./plotDesign",
                 "./inspectFrF2DesignCatalog",
-                "./inspectOrthogonalArrayDesignCatalog" 
+                "./inspectOADesignCatalog" 
             ]
         },
         {
-            "name": "Modify Design",
+            "name": t('doe_Modify_Design'),// {ns: 'menutoolbar'}),
             "icon": "icon-doe",
             "children": [
                 "./addRemoveResp",
-                "./AddCenterpoint2LevelDesign"						
+                "./addCenterpoint2LevelDesign"						
             ]
         },
         {
-            "name": "Analyze Design",
+            "name": t('doe_Analyze_Design'),// {ns: 'menutoolbar'}),
             "icon": "icon-doe",
             "children": [
                 "./linearRegressionDoE",
-                "./responseSurfaceModelFormula",
-                "./mainEffectsIntractionPlotsGen", 
+                "./RSMFormula",
+                "./mainEffectsIntractionPlots", 
                 "./effectsPlot2LevelFactor"
                 
             ]
@@ -63,6 +64,9 @@ const nav = {
         
     ]
 
-}
+})
 
-module.exports.nav = nav
+module.exports = {
+    nav: nav(),
+    render: () => nav()
+}
