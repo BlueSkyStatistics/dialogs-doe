@@ -1,14 +1,14 @@
 
 
 
-class createRegular2LevelDesign extends baseModal {
-    static dialogId = 'createRegular2LevelDesign'
-    static t = baseModal.makeT(createRegular2LevelDesign.dialogId)
+class createRegularFrF2Design extends baseModal {
+    static dialogId = 'createRegularFrF2Design'
+    static t = baseModal.makeT(createRegularFrF2Design.dialogId)
 
     constructor() {
         var config = {
-            id: createRegular2LevelDesign.dialogId,
-            label: createRegular2LevelDesign.t('title'),
+            id: createRegularFrF2Design.dialogId,
+            label: createRegularFrF2Design.t('title'),
             modalType: "two",
             RCode: `
             require(DoE.base)
@@ -70,7 +70,7 @@ class createRegular2LevelDesign extends baseModal {
             datasetname: {
                 el: new input(config, {
                     no: 'datasetname',
-                    label: createRegular2LevelDesign.t('datasetname'),
+                    label: createRegularFrF2Design.t('datasetname'),
                     placeholder: "",
                     required: true,
                     extraction: "TextAsIs",
@@ -80,7 +80,7 @@ class createRegular2LevelDesign extends baseModal {
             },
             selectedvars: {
                 el: new dstVariableList(config, {
-                    label: createRegular2LevelDesign.t('selectedvars'),
+                    label: createRegularFrF2Design.t('selectedvars'),
                     no: "selectedvars",
                     filter: "String|Numeric|Date|Logical|Ordinal|Nominal|Scale",
                     extraction: "NoPrefix|UseComma|Enclosed",                    
@@ -91,7 +91,7 @@ class createRegular2LevelDesign extends baseModal {
             numOfRuns: {
                 el: new inputSpinner(config, {
                     no: 'numOfRuns',
-                    label: createRegular2LevelDesign.t('numOfRuns'),
+                    label: createRegularFrF2Design.t('numOfRuns'),
                     required: false,
                     min: 0,
                     max: 99999,
@@ -105,7 +105,7 @@ class createRegular2LevelDesign extends baseModal {
             numOfBlocks: {
                 el: new inputSpinner(config, {
                     no: 'numOfBlocks',
-                    label: createRegular2LevelDesign.t('numOfBlocks'),
+                    label: createRegularFrF2Design.t('numOfBlocks'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -117,7 +117,7 @@ class createRegular2LevelDesign extends baseModal {
 			numOfCenterPts: {
                 el: new inputSpinner(config, {
                     no: 'numOfCenterPts',
-                    label: createRegular2LevelDesign.t('numOfCenterPts'),
+                    label: createRegularFrF2Design.t('numOfCenterPts'),
                     required: true,
                     min: 0,
                     max: 9999,
@@ -129,7 +129,7 @@ class createRegular2LevelDesign extends baseModal {
 			centerPointDistribution: {
                 el: new inputSpinner(config, {
                     no: 'centerPointDistribution',
-                    label: createRegular2LevelDesign.t('centerPointDistribution'),
+                    label: createRegularFrF2Design.t('centerPointDistribution'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -141,7 +141,7 @@ class createRegular2LevelDesign extends baseModal {
             replications: {
                 el: new inputSpinner(config, {
                     no: 'replications',
-                    label: createRegular2LevelDesign.t('replications'),
+                    label: createRegularFrF2Design.t('replications'),
                     required: true,
                     min: 1,
                     max: 9999,
@@ -152,7 +152,7 @@ class createRegular2LevelDesign extends baseModal {
             randomseeds: {
                 el: new inputSpinner(config, {
                     no: 'randomseeds',
-                    label: createRegular2LevelDesign.t('randomseeds'),
+                    label: createRegularFrF2Design.t('randomseeds'),
                     //required: true,
                    // min: 1,
                     max: 9999,
@@ -164,7 +164,7 @@ class createRegular2LevelDesign extends baseModal {
             roman: {
                 el: new inputSpinner(config, {
                     no: 'roman',
-                    label: createRegular2LevelDesign.t('roman'),
+                    label: createRegularFrF2Design.t('roman'),
                     required: true,
                     min: 3,
                     max: 99,
@@ -176,7 +176,7 @@ class createRegular2LevelDesign extends baseModal {
 			designcatlgname: {
                 el: new input(config, {
                     no: 'designcatlgname',
-                    label: createRegular2LevelDesign.t('designcatlgname'),
+                    label: createRegularFrF2Design.t('designcatlgname'),
 					allow_spaces:true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -189,7 +189,7 @@ class createRegular2LevelDesign extends baseModal {
 			designnamefromcatlg: {
                 el: new input(config, {
                     no: 'designnamefromcatlg',
-                    label: createRegular2LevelDesign.t('designnamefromcatlg'),
+                    label: createRegularFrF2Design.t('designnamefromcatlg'),
 					allow_spaces:true,
                     placeholder: "",
                     extraction: "TextAsIs",
@@ -199,18 +199,18 @@ class createRegular2LevelDesign extends baseModal {
                 })
             },
 			
-            lblheading: { el: new labelVar(config, { label: createRegular2LevelDesign.t('lblheading'), style: "mt-3",h: 5 }) },
-            lbl1: { el: new labelVar(config, { label: createRegular2LevelDesign.t('lbl1'), style: "mt-3",h: 6 }) },
-            lbl2: { el: new labelVar(config, { label: createRegular2LevelDesign.t('lbl2'), style: "mt-3",h: 6 }) },
-			lbl3: { el: new labelVar(config, { label: createRegular2LevelDesign.t('lbl3'), style: "mt-3",h: 6 }) },
-            lbldesignheading: { el: new labelVar(config, { label: createRegular2LevelDesign.t('lbldesignheading'), style: "mt-3",h: 5 }) },
+            lblheading: { el: new labelVar(config, { label: createRegularFrF2Design.t('lblheading'), style: "mt-3",h: 5 }) },
+            lbl1: { el: new labelVar(config, { label: createRegularFrF2Design.t('lbl1'), style: "mt-3",h: 6 }) },
+            lbl2: { el: new labelVar(config, { label: createRegularFrF2Design.t('lbl2'), style: "mt-3",h: 6 }) },
+			lbl3: { el: new labelVar(config, { label: createRegularFrF2Design.t('lbl3'), style: "mt-3",h: 6 }) },
+            lbldesignheading: { el: new labelVar(config, { label: createRegularFrF2Design.t('lbldesignheading'), style: "mt-3",h: 5 }) },
             
-            alias2FIsChk: { el: new checkbox(config, { label: createRegular2LevelDesign.t('alias2FIsChk'), no: "alias2FIsChk",  style: "ml-5", extraction: "Boolean", newline: false }) },
-            repeatOnlyChk: { el: new checkbox(config, { label: createRegular2LevelDesign.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ml-5", extraction: "Boolean", newline: false }) },
+            alias2FIsChk: { el: new checkbox(config, { label: createRegularFrF2Design.t('alias2FIsChk'), no: "alias2FIsChk",  style: "ml-5", extraction: "Boolean", newline: false }) },
+            repeatOnlyChk: { el: new checkbox(config, { label: createRegularFrF2Design.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ml-5", extraction: "Boolean", newline: false }) },
             
 			randomizationChk: { 
 				el: new checkbox(config, { 
-					label: createRegular2LevelDesign.t('randomizationChk'), 
+					label: createRegularFrF2Design.t('randomizationChk'), 
 					no: "randomizationChk", 
 					//style: "ml-5", 
 					state: "checked", 
@@ -219,11 +219,11 @@ class createRegular2LevelDesign extends baseModal {
 				}) 
 			},
             
-			marad: { el: new radioButton(config, { label: createRegular2LevelDesign.t('marad'), no: "maxC2radgp", increment: "marad", value: "FALSE", state: "checked", extraction: "ValueAsIs" }) },
-            maxC2rad: { el: new radioButton(config, { label: createRegular2LevelDesign.t('maxC2rad'), no: "maxC2radgp", increment: "maxC2rad", value: "TRUE", state: "", extraction: "ValueAsIs" }) },
+			marad: { el: new radioButton(config, { label: createRegularFrF2Design.t('marad'), no: "maxC2radgp", increment: "marad", value: "FALSE", state: "checked", extraction: "ValueAsIs" }) },
+            maxC2rad: { el: new radioButton(config, { label: createRegularFrF2Design.t('maxC2rad'), no: "maxC2radgp", increment: "maxC2rad", value: "TRUE", state: "", extraction: "ValueAsIs" }) },
 			designChk: { 
 				el: new checkbox(config, { 
-					label: createRegular2LevelDesign.t('designChk'), 
+					label: createRegularFrF2Design.t('designChk'), 
 					no: "designChk", 
 					//dependant_objects: ["designcatlgname","designnamefromcatlg", "nrunsChk"], 
 					state: "unchecked", 
@@ -231,7 +231,7 @@ class createRegular2LevelDesign extends baseModal {
 					newline: false, 
 				}) 
 			},
-			nrunsChk: { el: new checkbox(config, { label: createRegular2LevelDesign.t('nrunsChk'), no: "nrunsChk",  style: "mt-5, ml-5", extraction: "Boolean", newline: false }) },
+			nrunsChk: { el: new checkbox(config, { label: createRegularFrF2Design.t('nrunsChk'), no: "nrunsChk",  style: "mt-5, ml-5", extraction: "Boolean", newline: false }) },
 		}
         const content = {
             left: [objects.content_var.el.content],
@@ -251,7 +251,7 @@ class createRegular2LevelDesign extends baseModal {
 				objects.lbl3.el.content, objects.designChk.el.content, objects.designcatlgname.el.content, objects.designnamefromcatlg.el.content,
 				objects.nrunsChk.el.content],
             nav: {
-                name: createRegular2LevelDesign.t('navigation'),
+                name: createRegularFrF2Design.t('navigation'),
                 icon: "icon-doe",
                 datasetRequired: false,
                 modal: config.id
@@ -260,14 +260,14 @@ class createRegular2LevelDesign extends baseModal {
         super(config, objects, content);
 		
         this.help = {
-            title: createRegular2LevelDesign.t('help.title'),
+            title: createRegularFrF2Design.t('help.title'),
             r_help: "help(data,package='utils')",
-            body: createRegular2LevelDesign.t('help.body')
+            body: createRegularFrF2Design.t('help.body')
         }
 ;
     }
 }
 
 module.exports = {
-    render: () => new createRegular2LevelDesign().render()
+    render: () => new createRegularFrF2Design().render()
 }
