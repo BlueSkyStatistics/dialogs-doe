@@ -141,7 +141,7 @@ class createTaguchiParameterDesign extends baseModal {
 		
         this.help = {
             title: createTaguchiParameterDesign.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: createTaguchiParameterDesign.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: createTaguchiParameterDesign.t('help.body')
         }
 ;

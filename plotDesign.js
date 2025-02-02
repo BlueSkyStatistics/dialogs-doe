@@ -41,7 +41,7 @@ class plotDesign extends baseModal {
         
         this.help = {
             title: plotDesign.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: plotDesign.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: plotDesign.t('help.body')
         }
 ;

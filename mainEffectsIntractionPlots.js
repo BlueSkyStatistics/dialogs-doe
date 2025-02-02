@@ -63,7 +63,7 @@ class mainEffectsIntractionPlots extends baseModal {
 		
         this.help = {
             title: mainEffectsIntractionPlots.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: mainEffectsIntractionPlots.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: mainEffectsIntractionPlots.t('help.body')
         }
 ;

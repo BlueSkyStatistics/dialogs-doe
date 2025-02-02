@@ -189,7 +189,7 @@ class createOrthogonalArrayDesign extends baseModal {
 		
         this.help = {
             title: createOrthogonalArrayDesign.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: createOrthogonalArrayDesign.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: createOrthogonalArrayDesign.t('help.body')
         }
 ;

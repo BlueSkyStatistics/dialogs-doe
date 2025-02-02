@@ -158,7 +158,7 @@ class createLatinHypercubeDesign extends baseModal {
 		
         this.help = {
             title: createLatinHypercubeDesign.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: createLatinHypercubeDesign.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: createLatinHypercubeDesign.t('help.body')
         }
 ;

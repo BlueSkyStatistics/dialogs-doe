@@ -141,7 +141,7 @@ class createCentralCompositeDesign extends baseModal {
 		
         this.help = {
             title: createCentralCompositeDesign.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: createCentralCompositeDesign.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: createCentralCompositeDesign.t('help.body')
         }
 ;

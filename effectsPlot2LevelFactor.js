@@ -58,7 +58,7 @@ class effectsPlot2LevelFactor extends baseModal {
 		
         this.help = {
             title: effectsPlot2LevelFactor.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: effectsPlot2LevelFactor.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: effectsPlot2LevelFactor.t('help.body')
         }
 ;

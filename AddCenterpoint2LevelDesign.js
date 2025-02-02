@@ -94,7 +94,7 @@ class addCenterpoint2LevelDesign extends baseModal {
 		
         this.help = {
             title: addCenterpoint2LevelDesign.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: addCenterpoint2LevelDesign.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: addCenterpoint2LevelDesign.t('help.body')
         }
 ;

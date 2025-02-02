@@ -261,7 +261,7 @@ class createRegularFrF2Design extends baseModal {
 		
         this.help = {
             title: createRegularFrF2Design.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: createRegularFrF2Design.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: createRegularFrF2Design.t('help.body')
         }
 ;

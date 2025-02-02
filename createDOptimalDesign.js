@@ -191,7 +191,7 @@ class createDOptimalDesign extends baseModal {
 		
         this.help = {
             title: createDOptimalDesign.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: createDOptimalDesign.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: createDOptimalDesign.t('help.body')
         }
 ;

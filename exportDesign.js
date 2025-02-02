@@ -51,7 +51,7 @@ class exportDesign extends baseModal {
 		
         this.help = {
             title: exportDesign.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: exportDesign.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: exportDesign.t('help.body')
         }
 ;

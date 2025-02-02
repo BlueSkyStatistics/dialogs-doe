@@ -131,7 +131,7 @@ class inspectFrF2DesignCatalog extends baseModal {
 		
         this.help = {
             title: inspectFrF2DesignCatalog.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: inspectFrF2DesignCatalog.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: inspectFrF2DesignCatalog.t('help.body')
         }
 ;

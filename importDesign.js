@@ -62,7 +62,7 @@ BSkyLoadRefresh('{{selected.datasetname | safe}}')
 		
         this.help = {
             title: importDesign.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: importDesign.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: importDesign.t('help.body')
         }
 ;

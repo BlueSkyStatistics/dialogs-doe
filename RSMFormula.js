@@ -197,7 +197,7 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
         
         this.help = {
             title: RSMFormula.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: RSMFormula.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: RSMFormula.t('help.body')
         }
 ;

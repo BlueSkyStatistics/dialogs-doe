@@ -124,7 +124,7 @@ class createDoEgrid extends baseModal {
 		
         this.help = {
             title: createDoEgrid.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: createDoEgrid.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: createDoEgrid.t('help.body')
         }
 ;

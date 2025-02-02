@@ -129,7 +129,7 @@ class createBoxBehnkenDesign extends baseModal {
 		
         this.help = {
             title: createBoxBehnkenDesign.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: createBoxBehnkenDesign.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: createBoxBehnkenDesign.t('help.body')
         }
 ;

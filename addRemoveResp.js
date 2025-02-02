@@ -40,7 +40,7 @@ class addRemoveResp extends baseModal {
         
         this.help = {
             title: addRemoveResp.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: addRemoveResp.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: addRemoveResp.t('help.body')
         }
 ;

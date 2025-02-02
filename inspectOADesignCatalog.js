@@ -144,7 +144,7 @@ class inspectOADesignCatalog extends baseModal {
 		
         this.help = {
             title: inspectOADesignCatalog.t('help.title'),
-            r_help: "help(data,package='utils')",
+            r_help: inspectOADesignCatalog.t('help.r_help'),  //r_help: "help(data,package='utils')",
             body: inspectOADesignCatalog.t('help.body')
         }
 ;
