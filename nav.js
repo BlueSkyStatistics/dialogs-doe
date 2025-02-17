@@ -3,7 +3,7 @@ const nav = () => ({
     "name": t('doe_top_level_title'),// {ns: 'menutoolbar'}),
     "tab": "DoE",
     "buttons": [
-        "./doeoverview",
+        "./doeOverview",
         {
             "name": t('doe_Create_DoE_Factor_Table'),// {ns: 'menutoolbar'}),
             "icon": "icon-doe",
