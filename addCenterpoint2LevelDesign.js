@@ -1,3 +1,9 @@
+/**
+  * This file is protected by copyright (c) 2023-2025 by BlueSky Statistics, LLC.
+  * All rights reserved. The copy, modification, or distribution of this file is not
+  * allowed without the prior written permission from BlueSky Statistics, LLC.
+ */
+
 var localization = {
     en: {
         title: "Add centerpoint to a 2-level Design (quantitative) with no prior centerpoint) - the selected design is the active design on the dataset UI grid",
