@@ -1,2 +1,2 @@
 # doeDialogs
-BlueSky Statistics Design of Experiments  dialogs
+BioStat Prime Design of Experiments  dialogs

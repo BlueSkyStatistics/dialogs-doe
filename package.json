@@ -1,11 +1,11 @@
 {
     "name": "@BlueSkyStatistics/dialogs/doe",
     "productName": "Design of experiments dialogs",
-    "description": "BlueSky Statistics Design of Experiments  dialogs",
+    "description": "BioStat Prime Design of Experiments  dialogs",
     "keywords": [],
     "main": "nav.js",
     "version": "1.0.6",
-    "author": "BlueSky Statistics",
+    "author": "BioStat Prime",
     "scripts": {},
     "dependencies": {
         "squirrelly": "7.9.2"
