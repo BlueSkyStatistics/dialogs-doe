@@ -413,7 +413,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
         
         this.help = {
             title: linearRegressionDoE.t('help.title'),
-            r_help: linearRegressionDoE.t('help.r_help'),  //r_help: "help(data,package='utils')",
+            r_help: linearRegressionDoE.t('help.r_help'), //Fix by Anil //r_help: "help(data,package='utils')",
             body: linearRegressionDoE.t('help.body')
         }
 ;
