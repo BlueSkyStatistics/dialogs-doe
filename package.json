@@ -4,7 +4,7 @@
     "description": "BioStat Prime Design of Experiments  dialogs",
     "keywords": [],
     "main": "nav.js",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "author": "BioStat Prime",
     "scripts": {},
     "dependencies": {
