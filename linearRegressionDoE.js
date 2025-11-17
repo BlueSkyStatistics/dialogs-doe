@@ -15,7 +15,8 @@ var localization = {
         dependent: "Response (dependent) variable",
         independent: "Independent variable(s)",
 		nointercept: "Ignore intercept (if checked, then do not check the specific options below for the 2-level Factor Design)",
-		degree: "Degree (leave it blank or type 2 for the linear model with main effects and 2-factor interactions)",
+		//degree: "Degree (leave it blank or type 2 for the linear model with main effects and 2-factor interactions)",
+		degree: "Degree (leave it blank for main effects; otherwise type 2 for 2nd level interactions, 3 for 3rd level interactions, etc)",
 		
 		effectsplot:"All effects plot (generated only when Degree is not specified)",
 
