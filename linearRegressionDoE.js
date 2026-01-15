@@ -34,6 +34,7 @@ require(FrF2)
 
 ##local ({
 
+{{if(options.selected.showModelEquationChk == 'TRUE')}}
 #Display theoretical model equation and coefficients
 
 #Display theoretical model
@@ -43,6 +44,7 @@ BSkyFormat(reg_formula)
 #Display coefficients
 reg_equation = equatiomatic::extract_eq({{selected.modelname | safe}}, use_coefs = TRUE,\n\t wrap = TRUE,  ital_vars = FALSE, coef_digits = BSkyGetDecimalDigitSetting() )
 BSkyFormat(reg_equation)
+{{/if}}
 
 #Summarizing the model
 BSky_LM_Summary_{{selected.modelname | safe}} = summary({{selected.modelname | safe}})
@@ -369,6 +371,19 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
 					style: "mb-3",
                 }), r: ['{{ var | safe}}']
             },
+			showModelEquationChk: {
+                el: new checkbox(config, {
+                    label: linearRegressionDoE.t('showModelEquationChk'), 
+					no: "showModelEquationChk",
+                    bs_type: "valuebox",
+                    //style: "mt-3",
+                    extraction: "BooleanValue",
+                    true_value: "TRUE",
+                    false_value: "FALSE",
+					//state: "checked",
+					newline: true,
+                })
+            },
         };
         const content = {
             left: [objects.content_var.el.content],
@@ -382,7 +397,9 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
 				
 				objects.generateplotchk.el.content,
 				
-				objects.weights.el.content,
+				objects.weights.el.content, 
+				
+				objects.showModelEquationChk.el.content,
 				
 				objects.twoLevelDesignTypeChk.el.content,
 				
@@ -401,7 +418,7 @@ attr(.GlobalEnv\${{selected.modelname | safe}},"depVarSample")= sample({{dataset
 				
 				objects.cubePlotChk.el.content,
 				objects.cubePlotModelMeanChk.el.content,
-				objects.cubePlotIndependent.el.content],
+				objects.cubePlotIndependent.el.content], 
 		
             nav: {
                 name: linearRegressionDoE.t('navigation'),
