@@ -60,6 +60,7 @@ const nav = () => ({
             "name": t('doe_Analyze_Design'),// {ns: 'menutoolbar'}),
             "icon": "icon-doe",
             "children": [
+                "./linearRegressionCurvTestDoE",
                 "./linearRegressionDoE",
                 "./RSMFormula",
                 "./mainEffectsIntractionPlots", 
