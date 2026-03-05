@@ -32,7 +32,6 @@ const nav = () => ({
                 "./createFullFactorialDesign",
                 "./createOrthogonalArrayDesign",
                 "./createDOptimalDesign",
-                "./createCentralCompositeDesign",
                 "./createBoxBehnkenDesign",
                 "./createLatinHypercubeDesign",
                 "./createTaguchiParameterDesign"
@@ -52,6 +51,7 @@ const nav = () => ({
             "name": t('doe_Modify_Design'),// {ns: 'menutoolbar'}),
             "icon": "icon-doe",
             "children": [
+                "./createCentralCompositeDesignMixedFactors",
                 "./addRemoveResp",
                 "./addCenterpoint2LevelDesign"						
             ]
