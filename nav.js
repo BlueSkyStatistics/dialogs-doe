@@ -49,7 +49,7 @@ const nav = {
             "name": "Modify Design",
             "icon": "icon-doe",
             "children": [
-                "createCentralCompositeDesignMixedFactors",
+                "./createCentralCompositeDesignMixedFactors",
                 "./addRemoveResp",
                 "./addCenterpoint2LevelDesign"						
             ]
