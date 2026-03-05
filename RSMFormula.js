@@ -9,11 +9,13 @@ var localization = {
     en: {
         title: "Design of Experiments analysis with Response Surface Model (Quantitative)",
         navigation: "Design Analysis - Response Surface Model",
+		
         modelname: "Enter Response Surface model name",
         dependent: "Response (dependent) variable",
-        formulaboxhint: "You can also enter SO(var1, var2,...) for second-order effects and interactions, or FO(...),... from rsm pkg in the above formula builder box.",
-        independent:"Numeric Predictors - insert below the numeric formula variables",
-        generateContourPlotChk: "Display Contour(plots)",
+        formulaboxhint: "You can also select/type SO(var1, var2,...) for second-order effects and interactions,  FO(var1, var2,..) for first order, TWI(var1, var2, ..) for two-way interactions, and PQ(var1, var2,..) for quadratic terms in the above formula builder box.",
+        //independent:"Numeric Predictors - insert below the numeric formula variables",
+        
+		generateContourPlotChk: "Display Contour(plots)",
 		generateRSMPlotChk: "Display Response Surface (plots)",
 		generatePathSteepestAscentChk: "Show path of steepest ascent from ridge analysis",
 		checkShapiroNormalityTestChk: "Shapiro normality test",
@@ -66,9 +68,30 @@ class RSMFormula extends baseModal {
 require(rsm)
 #require(rgl)
 
+		bsky_get_numeric_predictors <- function(model, data) {
+				  # force it to be a data frame when the data is a design obj
+				  data = as.data.frame(data)
+				  
+				  # All variables in formula
+				  vars <- all.vars(formula(model))
+				  
+				  # Remove response (first variable)
+				  predictors <- vars[-1]
+				  
+				  # Keep only predictors that are numeric in the dataset
+				  numeric_predictors <- predictors[
+					predictors %in% names(data) &
+					sapply(data[predictors], is.numeric)
+				  ]
+				  
+				  return(numeric_predictors)
+		}
+
 #Creating the model
 #BSkyFormat("{{selected.modelname | safe}} = rsm::rsm({{selected.dependent | safe}}~{{selected.formula | safe}}, na.action=na.exclude, data={{dataset.name}})")
 {{selected.modelname | safe}} = rsm::rsm({{selected.dependent | safe}}~{{selected.formula | safe}}, na.action=na.exclude, data={{dataset.name}})
+
+bsky_numeric_model_predictors = bsky_get_numeric_predictors (model = {{selected.modelname | safe}} , data = {{dataset.name}})
 
 #Display model summary and coefficients
 #BSkyFormat("Display model summary")
@@ -76,31 +99,45 @@ convert_lm_type = {{selected.modelname | safe}};
 class(convert_lm_type) = "lm"
 BSkyFormat(convert_lm_type)
 
-BSky_RSM_Summary_{{selected.modelname | safe}} = summary({{selected.modelname | safe}})
+ BSky_RSM_Summary_{{selected.modelname | safe}} = NULL
 
-#Analysis of Variance Table Response: {{selected.dependent | safe}};
-BSkyFormat(BSky_RSM_Summary_{{selected.modelname | safe}}\$lof, outputTableRenames = c("Analysis of Variance - Response: {{selected.dependent | safe}}"))
+bsky_safe_rsm_summary <- function(model) {
+  tryCatch(
+    summary(model),
+    error = function(e) {
+      message("Canonical analysis not available: surface is numerically flat. Returning lm summary instead of rsm model summary")
+      summary.lm(model)
+    }
+  )
+}
 
-#Stationary point of response surface
-BSkyFormat(BSky_RSM_Summary_{{selected.modelname | safe}}\$canonical$xs, outputTableRenames = c("Stationary point of response surface"))
+BSky_RSM_Summary_{{selected.modelname | safe}} = bsky_safe_rsm_summary(model = {{selected.modelname | safe}})
 
-#Eigenanalysis: eigen() decomposition
-BSkyFormat("Eigen analysis: eigen() decomposition")
-BSkyFormat(BSky_RSM_Summary_{{selected.modelname | safe}}\$canonical, outputTableIndex = c(2,3), outputTableRenames =c("Eigen Values", "Eigen Vectors"))
+if(!is.null(BSky_RSM_Summary_{{selected.modelname | safe}}) && inherits(BSky_RSM_Summary_{{selected.modelname | safe}}, "summary.rsm")){
+	#Analysis of Variance Table Response: {{selected.dependent | safe}};
+	BSkyFormat(BSky_RSM_Summary_{{selected.modelname | safe}}\$lof, outputTableRenames = c("Analysis of Variance - Response: {{selected.dependent | safe}}"))
+
+	#Stationary point of response surface
+	BSkyFormat(BSky_RSM_Summary_{{selected.modelname | safe}}\$canonical$xs, outputTableRenames = c("Stationary point of response surface"))
+
+	#Eigenanalysis: eigen() decomposition
+	BSkyFormat("Eigen analysis: eigen() decomposition")
+	BSkyFormat(BSky_RSM_Summary_{{selected.modelname | safe}}\$canonical, outputTableIndex = c(2,3), outputTableRenames =c("Eigen Values", "Eigen Vectors"))
+}
 
 #Display Contour(Plots)
 BSkyFormat("Display Contour(Plots)")
 #par(mfrow=c(2,3))
 par(mfrow=c(1,1))
-if({{selected.generateContourPlotChk | safe}}) graphics::contour({{selected.modelname | safe}}, ~{{selected.independent | safe}}, image=TRUE, at=summary({{selected.modelname | safe}}\$canonical$xs))
+if({{selected.generateContourPlotChk | safe}}) graphics::contour({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image=TRUE, at=summary({{selected.modelname | safe}}\$canonical$xs))
 
 #Display the Response Surface (Plots)
 BSkyFormat("Display the Response Surface (Plots)")
 par(mfrow=c(1,1))
-if({{selected.generateRSMPlotChk | safe}}) suppressWarnings(graphics::persp({{selected.modelname | safe}}, ~{{selected.independent | safe}}, image = TRUE,at = c(summary({{selected.modelname | safe}}\$canonical$xs), Block="B2"),theta=30,zlab="{{selected.dependent | safe}} in MPa",col.lab=33,contour="colors"))
+if({{selected.generateRSMPlotChk | safe}}) suppressWarnings(graphics::persp({{selected.modelname | safe}},reformulate(bsky_numeric_model_predictors), image = TRUE,at = c(summary({{selected.modelname | safe}}\$canonical$xs), Block="B2"),theta=30,zlab="{{selected.dependent | safe}} in MPa",col.lab=33,contour="colors"))
 
 #Show Path of steepest ascent from ridge analysis
-#BSkyFormat("Show Path of steepest ascent from ridge analysis")
+BSkyFormat("Show Path of steepest ascent from ridge analysis")
 if({{selected.generatePathSteepestAscentChk | safe}}) BSkyFormat(rsm::steepest({{selected.modelname | safe}}), outputTableRenames =c("Path of steepest ascent from ridge analysis"))
 
 #Show Shapiro Normlity Test
@@ -151,6 +188,7 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
 					h: 6,
 				}) 
 			},
+			/*
 			independent: {
                 el: new dstVariableList(config, {
                     label: localization.en.independent,
@@ -161,7 +199,8 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
                     extraction: "NoPrefix|UsePlus",
 					style: "mt-3 mb-1",
                 }), r: ['{{ var | safe}}']
-            },            
+            },      
+			*/
             generateContourPlotChk: {
                 el: new checkbox(config, {
                     label: localization.en.generateContourPlotChk, 
@@ -229,7 +268,7 @@ if({{selected.normalityPlotsChk | safe}}) {stats::qqnorm(residuals({{selected.mo
 					objects.dependent.el.content, 
 					objects.formulaBuilder.el.content, 
                     objects.formulaboxhint.el.content,
-					objects.independent.el.content, 
+					//objects.independent.el.content, 
 					objects.generateContourPlotChk.el.content,
 					objects.generateRSMPlotChk.el.content, 
 					objects.generatePathSteepestAscentChk.el.content, 
