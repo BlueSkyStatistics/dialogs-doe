@@ -30,7 +30,6 @@ const nav = {
                 "./createFullFactorialDesign",
                 "./createOrthogonalArrayDesign",
                 "./createDOptimalDesign",
-                "./createCentralCompositeDesign",
                 "./createBoxBehnkenDesign",
                 "./createLatinHypercubeDesign",
                 "./createTaguchiParameterDesign"
@@ -50,6 +49,7 @@ const nav = {
             "name": "Modify Design",
             "icon": "icon-doe",
             "children": [
+                "createCentralCompositeDesignMixedFactors",
                 "./addRemoveResp",
                 "./addCenterpoint2LevelDesign"						
             ]
