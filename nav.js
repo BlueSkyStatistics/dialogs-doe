@@ -58,6 +58,7 @@ const nav = {
             "name": "Analyze Design",
             "icon": "icon-doe",
             "children": [
+                "./linearRegressionCurvTestDoE",
                 "./linearRegressionDoE",
                 "./RSMFormula",
                 "./mainEffectsIntractionPlots", 
