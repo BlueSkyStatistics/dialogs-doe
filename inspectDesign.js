@@ -263,10 +263,11 @@ class inspectDesign extends baseModal {
 					
 				###############################################
                # Main flow starts here
-               ###############################################			    
-								
+               ###############################################	
+				
 				if(c("design") %in% class({{dataset.name}}))
 				{
+					
 					{{if(options.selected.responseVariablesChk == "TRUE")}}
 						BSkyFormat(paste("Design Type:", attributes({{dataset.name}})$design.info$type,"and Number of Runs:", attributes({{dataset.name}})$design.info$nruns))
 						BSkyFormat(paste("Response variable(s):", paste(response.names({{dataset.name}}), collapse=", ")))
@@ -290,7 +291,6 @@ class inspectDesign extends baseModal {
 						{{if(options.selected.printDesignWithRunOrderChk == "TRUE")}}
 							combinedDesignFrame = cbind(run.order({{dataset.name}})[,c(2,1,3)], as.data.frame( {{dataset.name}} ))
 							row.names(combinedDesignFrame) = c()
-						}
 						{{#else}}
 							combinedDesignFrame = as.data.frame( {{dataset.name}} )
 						{{/if}}
@@ -299,17 +299,20 @@ class inspectDesign extends baseModal {
 					{{/if}}
 					
 					
-					{{if(options.summarizeBriefChk == "TRUE")}}
+					{{if(options.selected.summarizeBriefChk == "TRUE")}}
+						BSkyFormat("Design Summary (brief) for {{dataset.name}}")
 						summary( {{dataset.name}} , brief = TRUE)
 					{{/if}}
 
 					
-					{{if(options.summarizeDetailsChk == "TRUE")}}
+					{{if(options.selected.summarizeDetailsChk == "TRUE")}}
+						BSkyFormat("Design Summary (detail) for {{dataset.name}}")
 						summary( {{dataset.name}} , brief = FALSE)
 					{{/if}}
 
 
-					{{if(options.designinfoChk == "TRUE")}}
+					{{if(options.selected.designinfoChk == "TRUE")}}
+						BSkyFormat("Design object deatils (using design.info()) for {{dataset.name}}")
 						DoE.base::design.info( {{dataset.name}} )  
 					{{/if}}
 					
