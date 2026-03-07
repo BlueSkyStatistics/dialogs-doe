@@ -105,11 +105,12 @@ require(equatiomatic)
 require(textutils)
 require(effects)
 require(DoE.base)
+ require(DoE.wrapper)
 require(FrF2)
 #require(BsMD)
 
 					# 1. Identify CENTER points
-					bsky_identify_center_points <- function(design) {
+					bsky_identify_center_points <- function(design, tol = 1e-8) {
 					  di <- design.info(design)
 					  
 					  is_numeric_factor <- sapply(names(di$factor.names), function(fname) {
@@ -141,14 +142,14 @@ require(FrF2)
 					  })
 					  
 					  is_center <- apply(design_numeric[, numeric_factors, drop = FALSE], 1, function(row) {
-						all(abs(row - midpoints) < 0.01)
+						all(abs(row - midpoints) < tol)
 					  })
 					  
 					  which(is_center)
 					}
 
 					# 2. Identify AXIAL/STAR points
-					bsky_identify_axial_points <- function(design, repair = TRUE) {
+					bsky_identify_axial_points <- function(design, tol = 1e-8, repair = TRUE) {
 							  # repair = TRUE: update/create nstar, ncenter, ncube in design.info if missing or wrong
 							  
 							  di <- design.info(design)
@@ -205,7 +206,7 @@ require(FrF2)
 							  #    (distinguishes axial from factorial corner points)
 							  # -------------------------------------------------------
 							  is_axial <- apply(design_numeric[, numeric_factors, drop = FALSE], 1, function(row) {
-								at_center <- abs(row - midpoints) < 0.01
+								at_center <- abs(row - midpoints) < tol
 								n_at_center <- sum(at_center)
 								n_factors <- length(numeric_factors)
 								
@@ -213,9 +214,9 @@ require(FrF2)
 								  non_center_idx <- which(!at_center)
 								  non_center_val <- abs(row[non_center_idx] - midpoints[non_center_idx])
 								  
-								  if (non_center_val > 0.01) {
+								  if (non_center_val > tol) {
 									# Must be beyond the factorial range to qualify as axial
-									if (non_center_val > factor_ranges[non_center_idx] * 0.99) {
+									if (non_center_val > factor_ranges[non_center_idx] * (1-tol)) {
 									  return(TRUE)
 									}
 								  }
@@ -230,7 +231,7 @@ require(FrF2)
 							  # A point is a center if ALL numeric factors are at midpoint
 							  # -------------------------------------------------------
 							  is_center <- apply(design_numeric[, numeric_factors, drop = FALSE], 1, function(row) {
-								all(abs(row - midpoints) < 0.01)
+								all(abs(row - midpoints) < tol)
 							  })
 							  
 							  center_rows <- which(is_center)
@@ -313,21 +314,21 @@ require(FrF2)
 
 
 					# 3. Identify FACTORIAL/CUBE points
-					bsky_identify_factorial_points <- function(design) {
+					bsky_identify_factorial_points <- function(design, tol = 1e-8) {
 					  # Factorial points are those that are NOT center and NOT axial
 					  all_rows <- 1:nrow(design)
-					  center_rows <- bsky_identify_center_points(design)
-					  axial_rows <- bsky_identify_axial_points(design)
+					  center_rows <- bsky_identify_center_points(design, tol = tol)
+					  axial_rows <- bsky_identify_axial_points(design, tol = tol)
 					  
 					  factorial_rows <- setdiff(all_rows, c(center_rows, axial_rows))
 					  return(factorial_rows)
 					}
 
 					# 4. Summary function for axial and center points detection
-					bsky_summarize_design_point_rows <- function(design) {
-					  factorial <- bsky_identify_factorial_points(design)
-					  centers <- bsky_identify_center_points(design)
-					  axial <- bsky_identify_axial_points(design)
+					bsky_summarize_design_point_rows <- function(design, tol = 1e-8) {
+					  factorial <- bsky_identify_factorial_points(design, tol = tol)
+					  centers <- bsky_identify_center_points(design, tol = tol)
+					  axial <- bsky_identify_axial_points(design, tol = tol)
 					  
 					  cat("Design Point Summary:\n")
 					  #cat("---------------------")
@@ -352,146 +353,163 @@ require(FrF2)
 					# 5. Curvature tests with center points (minimum two center points needed and no axial points
 					# only first order linear equation with main effects or main effects eith optionaly interaction terms 
 					# formula must not have any weights, quadratic terms, etc
+					
 					bsky_lm_with_curvature_mixed_facor <- function(formula, design, tol = 1e-8) {
-							  # -------------------------------
-							  # 1. Identify predictors
-							  # -------------------------------
-							  response_name <- all.vars(formula)[1]
+						  # -------------------------------
+						  # 1. Identify predictors
+						  # -------------------------------
+						  response_name <- all.vars(formula)[1]
+						  term_obj      <- terms(formula)
+						  base_vars     <- all.vars(delete.response(term_obj))
 
-							  term_obj  <- terms(formula)
-							  base_vars <- all.vars(delete.response(term_obj))
+						  if (length(base_vars) == 0)
+							stop("Model must include at least one predictor.")
 
-							  if (length(base_vars) == 0)
-								stop("Model must include at least one predictor.")
+						  # -------------------------------
+						  # 2. Detect axial points
+						  # -------------------------------
+						  axial_idx <- bsky_identify_axial_points(design, tol = tol)
 
-							  # -------------------------------
-							  # 2. Detect axial points, if any - axial points should not be present
-							  # -------------------------------
-							 axial_idx <- bsky_identify_axial_points(design)
-							 
-							  # -------------------------------
-							  # 3. Detect center points
-							  # -------------------------------
-							  center_idx <- bsky_identify_center_points(design)
+						  # -------------------------------
+						  # 3. Detect center points
+						  # -------------------------------
+						  center_idx <- bsky_identify_center_points(design, tol = tol)
 
-							  if (length(center_idx) == 0)
-								stop("No center points detected.")
+						  if (length(center_idx) == 0)
+							stop("No center points detected.")
 
-							  data_center <- design[center_idx, , drop = FALSE]
-							  data_corner <- design[-c(center_idx, axial_idx), , drop = FALSE]
+						  data_center <- design[center_idx,  , drop = FALSE]
+						  data_corner <- design[-c(center_idx, axial_idx), , drop = FALSE]
 
-							  n_center    <- nrow(data_center)
-							  n_factorial <- nrow(data_corner)
+						  n_center    <- nrow(data_center)
+						  n_factorial <- nrow(data_corner)
 
-							  if (n_center < 2)
-								stop("Need at least 2 center points for curvature test.")
+						  if (n_center < 2)
+							stop("Need at least 2 center points for curvature test.")
 
-							  y_vec <- design[[response_name]]
+						  y_vec <- design[[response_name]]
 
-							  # -------------------------------
-							  # 4. Fit full model on ALL data
-							  # -------------------------------
-							  fit_full <- lm(formula, data = design)
-							  aov_full <- anova(fit_full)
+						  # -------------------------------
+						  # 4. Fit full model on ALL data
+						  # -------------------------------
+						  fit_full <- lm(formula, data = design)
+						  aov_full <- anova(fit_full)
 
-							  # -------------------------------
-							  # 5. Compute Curvature SS (POOLED)
-							  #    Works for both numeric-only
-							  #    and mixed-factor designs
-							  # -------------------------------
+						  # -------------------------------
+						  # 5. Compute Curvature SS (POOLED)
+						  # -------------------------------
+						  y_center_mean    <- mean(y_vec[center_idx])
+						  y_factorial_mean <- mean(y_vec[-c(center_idx, axial_idx)])
 
-							  y_center_mean    <- mean(y_vec[center_idx])
-							  y_factorial_mean <- mean(y_vec[-c(center_idx, axial_idx)])
+						  SS_curv <- (n_factorial * n_center) /
+									  (n_factorial + n_center) *
+									  (y_center_mean - y_factorial_mean)^2
 
-							  SS_curv <- (n_factorial * n_center) /
-										 (n_factorial + n_center) *
-										 (y_center_mean - y_factorial_mean)^2
+						  df_curv <- 1
+						  MS_curv <- SS_curv
 
-							  df_curv <- 1
-							  MS_curv <- SS_curv
+						  # -------------------------------
+						  # 6. Pure error from center replicates (for display/LOF only)
+						  # -------------------------------
+						  SS_pe <- sum((y_vec[center_idx] - y_center_mean)^2)
+						  df_pe <- n_center - 1
+						  MS_pe <- SS_pe / df_pe
 
-							  # -------------------------------
-							  # 6. Pure error from center replicates
-							  # -------------------------------
-							  SS_pe <- sum(
-								(y_vec[center_idx] - y_center_mean)^2
-							  )
+						  # -------------------------------
+						  # 7. Adjusted Error SS and df
+						  #    Remove curvature contribution from lm() residual
+						  #    SS_error = SS_resid_full - SS_curv  (e.g. 6.198 - 2.373 = 3.825)
+						  #    df_error = df_resid_full - df_curv  (e.g. 18 - 1 = 17)
+						  #
+						  #    MS_error = SS_error / df_error      (e.g. 3.825/17 = 0.225)
+						  #    This is the TRUE F-test denominator matching Minitab
+						  # -------------------------------
+						  SS_resid_full <- aov_full["Residuals", "Sum Sq"]
+						  df_resid_full <- aov_full["Residuals", "Df"]
 
-							  df_pe <- n_center - 1
-							  MS_pe <- SS_pe / df_pe
+						  SS_error_display <- SS_resid_full - SS_curv   # 3.825
+						  df_error_display <- df_resid_full - df_curv   # 17
+						  MS_error_display <- SS_error_display / df_error_display  # 0.225 ← TRUE denominator
 
-							  # -------------------------------
-							  # 7. Recompute F-tests using pure error
-							  # -------------------------------
-							  aov_no_resid <- aov_full[rownames(aov_full) != "Residuals", ]
+						  # -------------------------------
+						  # 8. Lack-of-Fit (for display)
+						  #    SS_lof = SS_error_display - SS_pe
+						  #    df_lof = df_error_display - df_pe
+						  # -------------------------------
+						  SS_lof <- SS_error_display - SS_pe
+						  df_lof <- df_error_display - df_pe
+						  MS_lof <- SS_lof / df_lof
 
-							  aov_no_resid$"F value" <-
-								aov_no_resid$"Mean Sq" / MS_pe
+						  # -------------------------------
+						  # 9. Recompute F-tests for main effects
+						  #    denominator = MS_error_display (matches Minitab exactly)
+						  # -------------------------------
+						  aov_no_resid <- aov_full[rownames(aov_full) != "Residuals", ]
 
-							  aov_no_resid$"Pr(>F)" <-
-								pf(aov_no_resid$"F value",
-								   aov_no_resid$Df,
-								   df_pe,
-								   lower.tail = FALSE)
+						  aov_no_resid$"F value" <-
+							aov_no_resid$"Mean Sq" / MS_error_display      # ← 0.225
 
-							  # -------------------------------
-							  # 8. Curvature row
-							  # -------------------------------
-							  curvature_row <- data.frame(
-								Df = df_curv,
-								"Sum Sq" = SS_curv,
-								"Mean Sq" = MS_curv,
-								"F value" = MS_curv / MS_pe,
-								"Pr(>F)" =
-								  pf(MS_curv / MS_pe,
-									 1,
-									 df_pe,
-									 lower.tail = FALSE),
-								check.names = FALSE
-							  )
-							  rownames(curvature_row) <- "Curvature"
+						  aov_no_resid$"Pr(>F)" <-
+							pf(aov_no_resid$"F value",
+							   aov_no_resid$Df,
+							   df_error_display,                            # ← 17
+							   lower.tail = FALSE)
 
-							  # -------------------------------
-							  # 9. Pure Error row
-							  # -------------------------------
-							  pure_error_row <- data.frame(
-								Df = df_pe,
-								"Sum Sq" = SS_pe,
-								"Mean Sq" = MS_pe,
-								"F value" = NA,
-								"Pr(>F)" = NA,
-								check.names = FALSE
-							  )
-							  rownames(pure_error_row) <- "Error"
+						  # -------------------------------
+						  # 10. Curvature row
+						  # -------------------------------
+						  curvature_row <- data.frame(
+							Df        = df_curv,
+							"Sum Sq"  = SS_curv,
+							"Mean Sq" = MS_curv,
+							"F value" = MS_curv / MS_error_display,         # ← 0.225
+							"Pr(>F)"  = pf(MS_curv / MS_error_display,
+											1,
+											df_error_display,               # ← 17
+											lower.tail = FALSE),
+							check.names = FALSE
+						  )
+						  rownames(curvature_row) <- "Curvature"
 
-							  # -------------------------------
-							  # 10. Total SS
-							  # -------------------------------
-							  SS_total <- sum(
-								(y_vec - mean(y_vec))^2
-							  )
+						  # -------------------------------
+						  # 11. Error row (matches Minitab display exactly)
+						  # -------------------------------
+						  error_row <- data.frame(
+							Df        = df_error_display,      # 17
+							"Sum Sq"  = SS_error_display,      # 3.825
+							"Mean Sq" = MS_error_display,      # 0.225
+							"F value" = NA,
+							"Pr(>F)"  = NA,
+							check.names = FALSE
+						  )
+						  rownames(error_row) <- "Error"
 
-							  total_row <- data.frame(
-								Df = nrow(design) - 1,
-								"Sum Sq" = SS_total,
-								"Mean Sq" = NA,
-								"F value" = NA,
-								"Pr(>F)" = NA,
-								check.names = FALSE
-							  )
-							  rownames(total_row) <- "Total"
+						  # -------------------------------
+						  # 12. Total SS
+						  # -------------------------------
+						  SS_total <- sum((y_vec - mean(y_vec))^2)
 
-							  # -------------------------------
-							  # 11. Combine table
-							  # -------------------------------
-							  final_table <- rbind(
-								aov_no_resid,
-								curvature_row,
-								pure_error_row,
-								total_row
-							  )
-							  
-							  return(final_table)
+						  total_row <- data.frame(
+							Df        = nrow(design) - 1,
+							"Sum Sq"  = SS_total,
+							"Mean Sq" = NA,
+							"F value" = NA,
+							"Pr(>F)"  = NA,
+							check.names = FALSE
+						  )
+						  rownames(total_row) <- "Total"
+
+						  # -------------------------------
+						  # 13. Combine final table
+						  # -------------------------------
+						  final_table <- rbind(
+							aov_no_resid,
+							curvature_row,
+							error_row,
+							total_row
+						  )
+
+						  return(final_table)
 					}
 
 
@@ -512,21 +530,21 @@ require(FrF2)
 				{
 					{{if(options.selected.axialCenterPointRowsChk == "TRUE")}}
 							   #bsky_summarize_design_point_rows will return the design after any star/center/cube row count repairs in the design info section
-								{{dataset.name}}  = bsky_summarize_design_point_rows({{dataset.name}})	
+								{{dataset.name}}  = bsky_summarize_design_point_rows({{dataset.name}}, tol = 1e-8)	
 					{{/if}}
 					
 					# -------------------------------
 					# Detect center points
 					# -------------------------------
-					bsky_center_points_rowID = bsky_identify_center_points({{dataset.name}})
+					bsky_center_points_rowID = bsky_identify_center_points({{dataset.name}}, tol = 1e-8)
 					
 					if(length(bsky_center_points_rowID) <2) {
 						cat("Number of center points found: ", length(bsky_center_points_rowID), " - Minimum 2 cente points needed to perform curvature test\n")
 					} else {
-						bsky_anova_table_with_curvature_test = bsky_lm_with_curvature_mixed_facor (formula = formula({{selected.modelname | safe}}), design = {{dataset.name}})
+						bsky_anova_table_with_curvature_test = bsky_lm_with_curvature_mixed_facor (formula = formula({{selected.modelname | safe}}), design = {{dataset.name}}, tol = 1e-8)
 						BSkyFormat(bsky_anova_table_with_curvature_test, singleTableOutputHeader = "Curvature Test - Anova Table")
 					}
-					bsky_design_only_factorial_rows = {{dataset.name}}[bsky_identify_factorial_points({{dataset.name}}), , drop = FALSE]
+					bsky_design_only_factorial_rows = {{dataset.name}}[bsky_identify_factorial_points({{dataset.name}}, tol = 1e-8), , drop = FALSE]
 					cat("Creating the linear model {{selected.modelname | safe}}", "only with the cube/factorial rows after removing the center points and axial points, if any\n")
 				} else{
 					cat("{{dataset.name}} not a design data type. No center point can be detected and no curvature test can be performed\n") 

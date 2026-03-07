@@ -34,9 +34,10 @@ class inspectDesign extends baseModal {
             RCode: `
 				
 				require(DoE.base)
+				 require(DoE.wrapper)
 				
 				# 1. Identify CENTER points
-					bsky_identify_center_points <- function(design) {
+					bsky_identify_center_points <- function(design, tol = 1e-8) {
 					  di <- design.info(design)
 					  
 					  is_numeric_factor <- sapply(names(di$factor.names), function(fname) {
@@ -68,14 +69,14 @@ class inspectDesign extends baseModal {
 					  })
 					  
 					  is_center <- apply(design_numeric[, numeric_factors, drop = FALSE], 1, function(row) {
-						all(abs(row - midpoints) < 0.01)
+						all(abs(row - midpoints) < tol)
 					  })
 					  
 					  which(is_center)
 					}
 
 					# 2. Identify AXIAL/STAR points
-					bsky_identify_axial_points <- function(design, repair = TRUE) {
+					bsky_identify_axial_points <- function(design, tol = 1e-8, repair = TRUE) {
 							  # repair = TRUE: update/create nstar, ncenter, ncube in design.info if missing or wrong
 							  
 							  di <- design.info(design)
@@ -132,7 +133,7 @@ class inspectDesign extends baseModal {
 							  #    (distinguishes axial from factorial corner points)
 							  # -------------------------------------------------------
 							  is_axial <- apply(design_numeric[, numeric_factors, drop = FALSE], 1, function(row) {
-								at_center <- abs(row - midpoints) < 0.01
+								at_center <- abs(row - midpoints) < tol
 								n_at_center <- sum(at_center)
 								n_factors <- length(numeric_factors)
 								
@@ -140,9 +141,9 @@ class inspectDesign extends baseModal {
 								  non_center_idx <- which(!at_center)
 								  non_center_val <- abs(row[non_center_idx] - midpoints[non_center_idx])
 								  
-								  if (non_center_val > 0.01) {
+								  if (non_center_val > tol) {
 									# Must be beyond the factorial range to qualify as axial
-									if (non_center_val > factor_ranges[non_center_idx] * 0.99) {
+									if (non_center_val > factor_ranges[non_center_idx] * (1-tol)) {
 									  return(TRUE)
 									}
 								  }
@@ -157,7 +158,7 @@ class inspectDesign extends baseModal {
 							  # A point is a center if ALL numeric factors are at midpoint
 							  # -------------------------------------------------------
 							  is_center <- apply(design_numeric[, numeric_factors, drop = FALSE], 1, function(row) {
-								all(abs(row - midpoints) < 0.01)
+								all(abs(row - midpoints) < tol)
 							  })
 							  
 							  center_rows <- which(is_center)
@@ -240,21 +241,21 @@ class inspectDesign extends baseModal {
 
 
 					# 3. Identify FACTORIAL/CUBE points
-					bsky_identify_factorial_points <- function(design) {
+					bsky_identify_factorial_points <- function(design, tol = 1e-8) {
 					  # Factorial points are those that are NOT center and NOT axial
 					  all_rows <- 1:nrow(design)
-					  center_rows <- bsky_identify_center_points(design)
-					  axial_rows <- bsky_identify_axial_points(design)
+					  center_rows <- bsky_identify_center_points(design, tol = tol)
+					  axial_rows <- bsky_identify_axial_points(design, tol = tol)
 					  
 					  factorial_rows <- setdiff(all_rows, c(center_rows, axial_rows))
 					  return(factorial_rows)
 					}
 
-					# 4. Summary function
-					bsky_summarize_design_point_rows <- function(design) {
-					  factorial <- bsky_identify_factorial_points(design)
-					  centers <- bsky_identify_center_points(design)
-					  axial <- bsky_identify_axial_points(design)
+					# 4. Summary function for axial and center points detection
+					bsky_summarize_design_point_rows <- function(design, tol = 1e-8) {
+					  factorial <- bsky_identify_factorial_points(design, tol = tol)
+					  centers <- bsky_identify_center_points(design, tol = tol)
+					  axial <- bsky_identify_axial_points(design, tol = tol)
 					  
 					  cat("Design Point Summary:\n")
 					  #cat("---------------------")
@@ -290,7 +291,7 @@ class inspectDesign extends baseModal {
 					
 					{{if(options.selected.axialCenterPointRowsChk == "TRUE")}}
 					   #bsky_summarize_design_point_rows will return the design after any star/center/cube row count repairs in the design info section
-						{{dataset.name}}  = bsky_summarize_design_point_rows({{dataset.name}})
+						{{dataset.name}}  = bsky_summarize_design_point_rows({{dataset.name}}, tol = 1e-8)
 					{{/if}}
 					
 					
