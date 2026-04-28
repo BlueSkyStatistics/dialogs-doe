@@ -1527,6 +1527,47 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 			bsky_resids = bsky_plot_residuals(model = {{selected.modelname | safe}},  residual_type = NULL, grouping_var_label = c(""), flipaxisPPplot = {{selected.flipaxisPPplotChk | safe}}, deGroupPlots = {{selected.deGroupPlotsChk | safe}})
 			bsky_normality_test(dataVar = bsky_resids, dataVarName = "Residuals", Shapiro = {{selected.checkShapiroNormalityTestChk | safe}}, Anderson = {{selected.checkADNormalityTestChk | safe}})
 	{{/if}}
+	
+	# ── Set BlueSky metadata attributes on the final RSM model ──────────────
+	# BSkyPredict() and other BlueSky evaluation functions require these custom
+	# attributes to be present on any model object. They are normally attached
+	# when a model is fitted through the BlueSky UI, but must be set explicitly
+	# here so that the saved RSM model works correctly in downstream dialogs
+	# (predictions, model evaluation, convert RSM to LM, etc.).
+	tryCatch({
+    #bsky_live_dataset  <- get("{{dataset.name}}", envir = .GlobalEnv)
+    bsky_dep_var_name  <- "{{selected.dependent | safe}}"
+
+    # Use bsky_get_numeric_predictors() — already defined above — to correctly
+    # extract predictor names from RSM macro formulas (SO, FO, TWI, PQ etc.)
+    # as well as plain lm-style formulas. all.vars() alone is not reliable
+    # when RSM macros are present because it parses macro names as symbols.
+    bsky_indep_names   <- bsky_get_numeric_predictors(
+                              model = {{selected.modelname | safe}},
+                              data  ={{dataset.name}}
+                          )
+    bsky_indep_in_data <- intersect(bsky_indep_names, names({{dataset.name}}))
+
+    # classDepVar: R class of the response variable in the dataset
+    attr({{selected.modelname | safe}}, "classDepVar")  <- class({{dataset.name}}[[bsky_dep_var_name]])
+	
+	# indepVars: independent variable names present in the dataset
+		attr({{selected.modelname | safe}}, "indepVars") <- bsky_indep_in_data
+	
+	# depVar: response variable name as a string
+		attr({{selected.modelname | safe}}, "depVar") <- bsky_dep_var_name
+		
+    # Re-assign model with attributes back to .GlobalEnv
+    assign("{{selected.modelname | safe}}", {{selected.modelname | safe}}, envir = .GlobalEnv)
+
+	}, error = function(e) {
+		warning("Could not set BSky metadata attributes on {{selected.modelname | safe}}: ", e$message)
+	})
+
+	
+	#Clean up
+	if(!is.null({{selected.modelname | safe}}_full)) rm({{selected.modelname | safe}}_full)
+	
 
 \t
 `
