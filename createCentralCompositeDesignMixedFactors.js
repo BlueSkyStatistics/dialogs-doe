@@ -1298,16 +1298,23 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						star = star[rep(1:ns, bbreps[2]), ]
 					  sblk = rep((1 + nblev):(bbreps[2] + nblev), rep(ns, bbreps[2]))
 					  
+					  
 					  if (is.character(alpha)) {
+						  alpha_type_used = alpha
 						c.ii = sum(cube[[1]]^2)
 						s.ii = sum(star[[1]]^2)
 						what = pmatch(alpha, c("rotatable", "orthogonal"))
 						if (is.na(what))
-						  stop("alpha must be 'rotatable', 'orthogonal', or a value")
+						  stop("alpha must be 'rotatable', 'orthogonal', or a numeric value")
 						if (what == 1)
 						  alpha = (2 * c.ii/s.ii)^0.25
 						else alpha = sqrt(nrow(star)/s.ii * c.ii/nrow(cube))
+					  } else {
+						  alpha_type_used = "Value specified"
 					  }
+					  
+					  cat("Alpha type used for star points: ", alpha_type_used, "\n")
+					  cat("Alpha value used for star points: ", alpha, "\n")
 					  
 					  if (inscribed)
 						cube = cube/alpha
@@ -1370,7 +1377,17 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 										columns="all", 
 										block.name=c('{{selected.blockName | safe}}'),
 										add.star = {{selected.addStarPointChk | safe}},
-										alpha = c('{{selected.alpha | safe}}'), 
+										
+										alpha = {{if(options.selected.alpha == '' )}} 
+															'orthogonal' 
+													  {{#else}}
+															{{if(options.selected.alpha == 'orthogonal' || options.selected.alpha == 'rotatable' )}}  
+																c('{{selected.alpha | safe}}') 
+														   {{#else}} 
+																	as.numeric('{{selected.alpha | safe}}') 
+															{{/if}}
+													  {{/if}},
+													  
 										{{if(options.selected.randomseeds !== "")}} 
 										seed= {{selected.randomseeds | safe}},
 										{{/if}}
@@ -1441,7 +1458,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 					allow_spaces:true,
                     placeholder: "",
                     extraction: "TextAsIs",
-                    value: "4",
+                    value: "4, 0",
 					//style: "ml-5 mb-1",
                 })
             },
@@ -1470,8 +1487,8 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 					style: "ml-5",
                 })
             },            
-            alphalbl: { el: new labelVar(config, { label: createCentralCompositeDesignMixedFactors.t('alphalbl'), style: "mt-3 ml-5",h: 6 }) },
-            lbl1: { el: new labelVar(config, { label: createCentralCompositeDesignMixedFactors.t('lbl1'), style: "mt-3",h: 6 }) },
+            alphalbl: { el: new labelVar(config, { label: createCentralCompositeDesignMixedFactors.t('alphalbl'), style: "mt-3 ml-5",h: 4 }) },
+            lbl1: { el: new labelVar(config, { label: createCentralCompositeDesignMixedFactors.t('lbl1'), style: "mt-3", h: 6 }) },
 
             randomizationChk: { 
 				el: new checkbox(config, { 
