@@ -11,8 +11,8 @@ var localization = {
         navigation: "Design Analysis - Response Surface Model",
         modelname: "Enter Response Surface model name",
         dependent: "Response (dependent) variable",
-        formulaboxhint: "You can also enter SO(var1, var2,...) as shortcut for main effects, interactions, and quadratic terms or FO(...) for just main effects, or TWI for two way interactions as RSM macro in the above formula builder box.",
-        //independent:"Numeric Predictors - insert below the numeric formula variables",
+        formulaboxhint: "Recommendation: You should only use RSM macro terms (e.g., FO, TWI, PQ, SO) in the model formula to benefit the full capability of RSM analysis. Type SO(var1, var2,...) as a shortcut for main effects, interactions, and quadratic terms or FO(...) for just main effects, or TWI for two-way interactions as an RSM macro in the above formula builder box.",  
+		//independent:"Numeric Predictors - insert below the numeric formula variables",
         generateContourPlotChk: "Display Contour(plots)",
 		generateRSMPlotChk: "Display Response Surface (plots)",
 		generatePathSteepestAscentChk: "Show path of steepest ascent from ridge analysis",
@@ -124,45 +124,47 @@ bsky_get_numeric_predictors <- function(model, data) {
 
   macro_terms <- term_labels[grepl(macro_pattern, term_labels)]
 
+  # ── Block ID heuristic helper ────────────────────────────────────────────
+  bsky_is_block_col <- function(col) {
+    if (!is.numeric(col) && !is.integer(col)) return(FALSE)
+    uvals <- sort(unique(col[!is.na(col)]))
+    n <- length(uvals)
+    n <= 20 && all(col == floor(col), na.rm = TRUE) && all(uvals == seq_len(n))
+  }
+
+  # ── Collect macro vars (always, even in mixed formulas) ──────────────────
+  macro_vars <- character(0)
   if (length(macro_terms) > 0) {
-    # Extract variable names from inside the macros using str2lang()
     macro_vars <- unique(unlist(lapply(macro_terms, function(lab) {
       tryCatch(all.vars(str2lang(lab)), error = function(e) character(0))
     })))
-    # Keep only those that actually exist and are numeric in the data
-    # (sanity check — all should be, but guards against edge cases)
     macro_vars <- macro_vars[
-      macro_vars %in% names(data) &
-      sapply(data[macro_vars], is.numeric)
+      macro_vars %in% names(data) & sapply(data[macro_vars], is.numeric)
     ]
-    return(macro_vars)
   }
 
-  # ── Fallback path: no rsm macros — use is.numeric() with block heuristic ──
-  all_vars   <- all.vars(fmla)
-  predictors <- setdiff(all_vars, resp)
-  predictors <- predictors[predictors %in% names(data)]
+  # ── Collect plain numeric vars typed OUTSIDE macros ──────────────────────
+  # Handles mixed formulas like: Temp + Pressure + Pressure:Thinner + SO(Speed,Angle)
+  # The macro path finds Speed,Angle but misses Temp, Pressure, Thinner.
+  # all.vars() on the whole formula catches all variable names including those
+  # in plain terms and interactions outside macros.
+  all_pred_vars <- setdiff(all.vars(fmla), resp)
+  all_pred_vars <- all_pred_vars[all_pred_vars %in% names(data)]
 
-  is_num <- sapply(predictors, function(v) {
-    col <- data[[v]]
-    if (!is.numeric(col)) return(FALSE)
+  plain_numeric_vars <- all_pred_vars[
+    !all_pred_vars %in% macro_vars &
+    sapply(all_pred_vars, function(v) {
+      col <- data[[v]]
+      if (!is.numeric(col) && !is.integer(col)) return(FALSE)
+      if (bsky_is_block_col(col)) return(FALSE)
+      TRUE
+    })
+  ]
 
-    # Block ID heuristic: exclude integer columns whose unique values form a
-    # small consecutive integer sequence starting at 1 (e.g. 1,2,3,4,5,6).
-    # Real continuous RSM predictors like Temp (20, 22.5, 25, 27.9...) or
-    # Speed (246, 350, 454...) never look like this.
-    uvals <- sort(unique(col))
-    n_unique <- length(uvals)
-    if (n_unique <= 20 &&                        # few unique values
-        all(col == floor(col)) &&                # all integer-valued
-        all(uvals == seq_len(n_unique))) {       # consecutive from 1
-      return(FALSE)   # looks like a block ID — exclude
-    }
-
-    TRUE
-  })
-
-  return(predictors[is_num])
+  # ── Combine macro vars + plain numeric vars ───────────────────────────────
+  result <- unique(c(macro_vars, plain_numeric_vars))
+  if (length(result) > 0) return(result)
+  return(character(0))
 }
 		
 # .bsky_num_vars is derived from the fitted model in STEP 1 (after
@@ -253,16 +255,23 @@ bsky_rsm_to_lm <- function(rsm_model, dataset) {
   # Expand all term labels and flatten to unique individual terms
   tlabs <- unique(unlist(lapply(tlabs_raw, bsky_expand_rsm_macro)))
 
-  # ── Strip blocking factor terms ─────────────────────────────────────────
-  # Keep only numeric predictor terms. A term is a block/factor term if it
-  # is a plain name (no ":" and not "I(...)") AND its column in the dataset
-  # is a factor or character.
-  is_factor_term <- sapply(tlabs, function(t) {
+  # ── Strip covariate terms (block IDs + factor/char columns) ────────────
+  # Interactions (x:y) and quadratics (I(x^2)) are always kept.
+  # Plain-name terms are stripped if they are factor/character columns OR
+  # numeric block ID columns (consecutive integers from 1).
+  is_covariate_term <- sapply(tlabs, function(t) {
     if (grepl(":", t, fixed = TRUE) || grepl("^I\\\\(", t)) return(FALSE)
     v <- dataset[[t]]
-    !is.null(v) && (is.factor(v) || is.character(v))
+    if (is.null(v)) return(FALSE)
+    if (is.factor(v) || is.character(v)) return(TRUE)
+    if (is.numeric(v) || is.integer(v)) {
+      uvals <- sort(unique(v[!is.na(v)]))
+      n <- length(uvals)
+      return(n <= 20 && all(v == floor(v), na.rm = TRUE) && all(uvals == seq_len(n)))
+    }
+    FALSE
   })
-  tlabs <- tlabs[!is_factor_term]
+  tlabs <- tlabs[!is_covariate_term]
 
   if (length(tlabs) == 0) {
     fmla <- as.formula(paste(resp, "~ 1"))
@@ -311,17 +320,8 @@ bsky_refit_as_rsm <- function(term_labels, resp_var, numeric_vars,
   dataset <- get(dataset_name, envir = .GlobalEnv)
 
   # ── Separate covariate terms from RSM numeric terms ─────────────────────
-  # Two-layer defence to ensure block/categorical terms never enter FO/PQ/TWI:
-  #
-  # Layer 1 — exclude anything in covariate_terms (block IDs, Paintbox etc.)
-  # Layer 2 — for fo_vars, additionally restrict to known numeric RSM vars
-  #           so even if a non-numeric term slips through layer 1 (e.g. when
-  #           user typed a plain formula with no macros and covariate_terms is
-  #           NULL), it still cannot enter FO().
-  #
-  # Interactions (x:y) and quadratics (I(x^2)) are kept as-is since their
-  # constituent variables are already guaranteed numeric by the RSM design.
-
+  # Layer 1: exclude covariate_terms (block IDs, Paintbox etc.) from RSM terms.
+  # Layer 2: fo_vars further restricted to known numeric_vars as safety net.
   rsm_term_labels <- term_labels[
     !term_labels %in% covariate_terms |
      grepl(":", term_labels, fixed = TRUE) |
@@ -329,10 +329,7 @@ bsky_refit_as_rsm <- function(term_labels, resp_var, numeric_vars,
   ]
 
   # ── Classify RSM terms into FO / PQ / TWI ────────────────────────────────
-  # Layer 2: fo_vars further restricted to known numeric_vars only.
-  # Any plain-name term not in numeric_vars (e.g. a block or factor column
-  # the caller forgot to pass in covariate_terms) is silently dropped here
-  # rather than being wrapped in FO() and causing rsm() to fail.
+  # FO: plain names that are confirmed numeric RSM predictors
   fo_vars_raw <- rsm_term_labels[
     !grepl(":", rsm_term_labels, fixed = TRUE) &
     !grepl("^I\\\\(", rsm_term_labels)
@@ -340,18 +337,60 @@ bsky_refit_as_rsm <- function(term_labels, resp_var, numeric_vars,
   fo_vars <- if (length(numeric_vars) > 0) {
     fo_vars_raw[fo_vars_raw %in% numeric_vars]
   } else {
-    fo_vars_raw   # no numeric_vars provided — trust the caller
+    fo_vars_raw
   }
 
+  # PQ: I(x^2) terms — extract variable name x
   pq_vars <- sub("^I\\\\((.+)\\\\^2\\\\)$", "\\\\1",
     rsm_term_labels[grepl("^I\\\\(.+\\\\^2\\\\)$", rsm_term_labels)])
 
-  twi_pairs <- rsm_term_labels[grepl(":", rsm_term_labels, fixed = TRUE)]
+  # TWI: plain x:y interaction terms
+  # IMPORTANT: keep the exact pairs as specified — do NOT expand to all
+  # combinations of unique variable names. This matters for mixed formulas
+  # like Temp + Pressure:Thinner + SO(Speed,Angle) where only Pressure:Thinner
+  # was intended, not all pairs of Pressure, Thinner, Speed, Angle.
+  # TWI() in rsm accepts individual pairs: TWI(x=Pressure, y=Thinner) is not
+  # valid syntax — rsm TWI only accepts a variable list and generates ALL pairs.
+  # So for specific pairs we must keep them as plain x:y terms outside macros.
+  twi_pairs_all <- rsm_term_labels[grepl(":", rsm_term_labels, fixed = TRUE)]
 
-  twi_vars <- if (length(twi_pairs) > 0) {
-    unique(unlist(strsplit(twi_pairs, ":", fixed = TRUE)))
+  # Separate TWI pairs into two groups:
+  #   "full" pairs: both variables also appear in fo_vars (from SO/TWI macros)
+  #                 → can be expressed as TWI(var1, var2, ...)
+  #   "partial" pairs: one or both vars NOT in fo_vars (plain typed interactions)
+  #                 → must stay as individual x:y plain terms outside macros
+  if (length(twi_pairs_all) > 0 && length(fo_vars) > 0) {
+    pair_vars_in_fo <- sapply(twi_pairs_all, function(p) {
+      vars <- strsplit(p, ":", fixed = TRUE)[[1]]
+      all(vars %in% fo_vars)
+    })
+    twi_pairs_full    <- twi_pairs_all[ pair_vars_in_fo]   # → TWI() macro
+    twi_pairs_partial <- twi_pairs_all[!pair_vars_in_fo]   # → plain x:y terms
+  } else {
+    twi_pairs_full    <- character(0)
+    twi_pairs_partial <- twi_pairs_all
+  }
+
+  # Build TWI macro from full pairs (both vars in FO)
+  twi_vars <- if (length(twi_pairs_full) > 0) {
+    unique(unlist(strsplit(twi_pairs_full, ":", fixed = TRUE)))
   } else {
     character(0)
+  }
+
+  # Heredity check: every var in PQ or TWI must be in FO.
+  # For plain formulas the user may have written I(x^2) without x as a main
+  # effect (unusual but possible). Add missing FO vars silently.
+  missing_from_fo <- setdiff(
+    unique(c(pq_vars, twi_vars)),
+    fo_vars
+  )
+  if (length(missing_from_fo) > 0) {
+    fo_vars <- unique(c(fo_vars, missing_from_fo))
+    cat(sprintf(
+      "NOTE: Adding %s to FO() to satisfy heredity for PQ/TWI terms.\n",
+      paste(missing_from_fo, collapse = ", ")
+    ))
   }
 
   # ── Build macro formula parts ────────────────────────────────────────────
@@ -369,9 +408,13 @@ bsky_refit_as_rsm <- function(term_labels, resp_var, numeric_vars,
     rsm_parts <- c(rsm_parts,
       paste0("TWI(", paste(twi_vars, collapse = ", "), ")"))
 
+  # Plain partial interactions (vars not all in FO) stay as individual x:y terms
+  # These are appended after the macros as plain formula terms
+  plain_interaction_parts <- twi_pairs_partial
+
   # ── Assemble formula ─────────────────────────────────────────────────────
-  # Covariate terms (block, categorical covariates) come BEFORE the RSM macros
-  rhs_parts <- c(covariate_terms, rsm_parts)
+  # Order: covariate terms | RSM macros | plain partial interactions
+  rhs_parts <- unique(c(covariate_terms, rsm_parts, plain_interaction_parts))
 
   if (length(rhs_parts) == 0) {
     warning("bsky_refit_as_rsm: no terms to fit, returning intercept-only lm.")
@@ -494,8 +537,24 @@ for (.t in .bsky_full_tlabs_raw) {
     # This catches all non-RSM terms regardless of storage type:
     #   - factor columns: Paintbox, Position, Block.ccd-as-factor
     #   - numeric/integer columns: Block.ccd-as-numeric, run order columns etc.
-    if (!is.null(.v) && !.t %in% .bsky_num_vars) {
-      .bsky_covariate_terms <- c(.bsky_covariate_terms, .t)
+    if (!is.null(.v)) {
+      if (.t %in% .bsky_num_vars) {
+        next  # already a confirmed numeric RSM predictor
+      } else if (is.numeric(.v) || is.integer(.v)) {
+        .bsky_cv_vals  <- .v[!is.na(.v)]
+        .bsky_uvals    <- sort(unique(.bsky_cv_vals))
+        .bsky_n_uvals  <- length(.bsky_uvals)
+        .bsky_is_block <- all(.bsky_cv_vals == floor(.bsky_cv_vals)) &&
+                          .bsky_n_uvals <= 20 &&
+                          all(.bsky_uvals == seq_len(.bsky_n_uvals))
+        if (.bsky_is_block) {
+          .bsky_covariate_terms <- c(.bsky_covariate_terms, .t)
+        } else {
+          .bsky_num_vars <- c(.bsky_num_vars, .t)  # safety net
+        }
+      } else {
+        .bsky_covariate_terms <- c(.bsky_covariate_terms, .t)
+      }
     }
   }
 }
@@ -964,6 +1023,7 @@ if ({{selected.stepwiseChk | safe}}) {
       cat("      To force reduction consider increasing alpha-to-remove above 0.15.\n\n")
     }
     {{selected.modelname | safe}} <- {{selected.modelname | safe}}_full
+    .bsky_final_num_vars <- .bsky_num_vars  # full model retained
 
   } else {
 
@@ -976,6 +1036,7 @@ if ({{selected.stepwiseChk | safe}}) {
     if (is.null(.bsky_reduced_formula_str)) {
       cat("\nNOTE: Heredity enforcement produced an empty formula. Using full model.\n\n")
       {{selected.modelname | safe}} <- {{selected.modelname | safe}}_full
+    .bsky_final_num_vars <- .bsky_num_vars  # full model retained
 
     } else {
 
@@ -983,11 +1044,17 @@ if ({{selected.stepwiseChk | safe}}) {
       cat(" ", .bsky_reduced_formula_str, "\n\n")
 
       # ── Refit the reduced model as a proper rsm object ──────────────────
-      # Extract the individual term labels selected by stepwise and pass them
-      # to bsky_refit_as_rsm(), which classifies them into FO/PQ/TWI macros
-      # and calls rsm() — guaranteeing class "rsm" and full access to all
-      # native RSM callouts ($lof, $canonical, steepest(), contour(), persp()).
-      .bsky_reduced_tlabs <- attr(terms(.bsky_step_lm), "term.labels")
+      # IMPORTANT: derive term labels from the HEREDITY-ENFORCED formula string,
+      # not from .bsky_step_lm which is the pre-heredity stepwise model.
+      # bsky_rsm_enforce_heredity() may have added lower-order main effects
+      # (e.g. Angle when Speed:Angle was selected but Angle was not) — these
+      # must be present in term_labels for bsky_refit_as_rsm to correctly
+      # classify all interactions as "full pairs" that go into TWI().
+      .bsky_reduced_tlabs <- attr(
+        terms(lm(as.formula(.bsky_reduced_formula_str),
+                 data = {{dataset.name}}, na.action = na.exclude)),
+        "term.labels"
+      )
 
       cat("\nSelected terms (after heredity enforcement):\n")
       cat(" ", paste(.bsky_reduced_tlabs, collapse = ", "), "\n\n")
@@ -1003,6 +1070,24 @@ if ({{selected.stepwiseChk | safe}}) {
       .bsky_rsm_only_tlabs <- .bsky_reduced_tlabs[
         !.bsky_reduced_tlabs %in% .bsky_reduced_covariates
       ]
+
+      # Derive numeric vars actually present in the REDUCED model.
+      # .bsky_num_vars holds all numeric vars from the full model — after
+      # stepwise some may have been dropped entirely. Extract variable names
+      # from the reduced RSM terms (plain names, I(x^2), and x:y interactions)
+      # and keep only those confirmed as numeric RSM predictors.
+      .bsky_final_num_vars <- intersect(
+        unique(unlist(lapply(.bsky_rsm_only_tlabs, function(t) {
+          if (grepl(":", t, fixed = TRUE)) {
+            strsplit(t, ":", fixed = TRUE)[[1]]          # x:y → c(x,y)
+          } else if (grepl("^I\\\\((.+)\\\\^2\\\\)$", t)) {
+            sub("^I\\\\((.+)\\\\^2\\\\)$", "\\\\1", t)  # I(x^2) → x
+          } else {
+            t                                            # plain main effect
+          }
+        }))),
+        .bsky_num_vars
+      )
 
       {{selected.modelname | safe}} <- suppressMessages(bsky_refit_as_rsm(
         term_labels  = .bsky_rsm_only_tlabs,
@@ -1047,14 +1132,22 @@ if ({{selected.stepwiseChk | safe}}) {
 } else {
   # No stepwise — use the full model as fitted
   {{selected.modelname | safe}} <- {{selected.modelname | safe}}_full
+  # All full-model numeric vars are in the final model
+  .bsky_final_num_vars <- .bsky_num_vars
 }
 
 # ════════════════════════════════════════════════════════════════════
 # STEP 3 — Display model summary and coefficients (full or reduced)
 # ════════════════════════════════════════════════════════════════════
 
-# Numeric predictor names for LOF and canonical — already in .bsky_num_vars
-bsky_numeric_model_predictors <- .bsky_num_vars
+# Numeric predictor names for the FINAL model (full or reduced after stepwise).
+# .bsky_final_num_vars is set in each branch above — it contains only the
+# numeric RSM predictors that actually appear in the final fitted model.
+# Using .bsky_num_vars here would be wrong when stepwise dropped some vars
+# entirely, causing contour plots and canonical analysis to reference vars
+# not in the model.
+bsky_numeric_model_predictors <- .bsky_final_num_vars
+
 
 convert_lm_type = NULL
 convert_lm_type = {{selected.modelname | safe}}
@@ -1634,6 +1727,55 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
     # Re-assign model with attributes back to .GlobalEnv
     assign("{{selected.modelname | safe}}", {{selected.modelname | safe}}, envir = .GlobalEnv)
 
+    # ── Create expanded lm companion model ───────────────────────────────────
+    # If the final model uses RSM macros (FO, SO, TWI, PQ etc.), create a
+    # companion plain lm model named {{selected.modelname | safe}}_lm with all
+    # macros expanded to individual terms (Temp, I(Temp^2), Temp:Pressure etc.)
+    # This is useful for standard lm-based diagnostics, predict(), and tools
+    # that do not recognise the rsm class.
+    # The companion model is NOT created when the final model is already a
+    # plain lm (no macros) — it would be identical and redundant.
+    .bsky_final_formula_str <- paste(
+      deparse(formula({{selected.modelname | safe}})), collapse = " "
+    )
+    .bsky_final_has_macros <- any(grepl(
+      "\\\\b(FO|SO|TWI|PQ|PE)\\\\s*\\\\(", .bsky_final_formula_str
+    ))
+
+     if (.bsky_final_has_macros) {
+		  # Expand macros to individual terms using bsky_rsm_to_lm().
+          # bsky_rsm_to_lm() builds the lm with a local 'fmla' variable which
+          # appears in $call as the symbol 'fmla' rather than the real formula.
+          # We rebuild the lm directly with an explicit formula string and the
+          # real dataset name so that $call is fully self-contained and
+          # downstream tools (formula(), predict(), anova() etc.) work correctly.
+          .bsky_expanded_tlabs <- attr(
+            terms(bsky_rsm_to_lm({{selected.modelname | safe}}, {{dataset.name}})),
+            "term.labels"
+          )
+          .bsky_companion_fmla <- as.formula(paste(
+            "{{selected.dependent | safe}} ~",
+            paste(.bsky_expanded_tlabs, collapse = " + ")
+          ))
+          # Refit with explicit formula and real dataset name so $call stores both
+          .bsky_companion_call <- call("lm",
+            formula   = .bsky_companion_fmla,
+            na.action = quote(na.exclude)
+          )
+          .bsky_companion_call[["data"]] <- as.name("{{dataset.name}}")
+          .bsky_lm_companion <- eval(.bsky_companion_call, envir = .GlobalEnv)
+
+          # Store with same BSky metadata attributes as the primary model
+          attr(.bsky_lm_companion, "classDepVar") <- class({{dataset.name}}[[bsky_dep_var_name]])
+          attr(.bsky_lm_companion, "indepVars")   <- bsky_indep_in_data
+          attr(.bsky_lm_companion, "depVar")      <- bsky_dep_var_name
+          assign("{{selected.modelname | safe}}_lm", .bsky_lm_companion, envir = .GlobalEnv)
+		  
+		  cat("NOTE: A companion lm model '{{selected.modelname | safe}}_lm' has been created in addition to the rsm model '{{selected.modelname | safe}}' ")
+		  cat("with all RSM macros (i.e., FO, TWI, PQ, SO) expanded to individual terms. ")
+		  cat("Use '{{selected.modelname | safe}}_lm' model for standard lm-based diagnostics and predictions using analysis menus under MODEL EVALUATION on the top menu bar.\n")
+    }
+
 	}, error = function(e) {
 		warning("Could not set BSky metadata attributes on {{selected.modelname | safe}}: ", e$message)
 	})
@@ -1641,6 +1783,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 	
 	#Clean up
 	if(!is.null({{selected.modelname | safe}}_full)) rm({{selected.modelname | safe}}_full)
+	if(exists("convert_lm_type", env = .GlobalEnv) && !is.null(convert_lm_type)) rm(convert_lm_type, env = .GlobalEnv)
 	
 
 \t
