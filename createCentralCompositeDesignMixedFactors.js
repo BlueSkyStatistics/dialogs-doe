@@ -14,8 +14,8 @@ var localization = {
         datasetFrF2 : "Select an exisiting Full Factorial or Fractional Factorial (FrF2) design with Mixed Factors - Quantitative and Discrete",
         
 		addStarPointChk: "(Uncheck) to only add center points and not add any axial/star points",
-		alpha: "Number of star points(alpha)",
-        alphalbl: "Type in orthogonal, rotatable, or an integer number that indicates the position of the star points",
+		alpha: "Star points (alpha)",
+        alphalbl: "Type in orthogonal, rotatable, or an integer number (e.g., 1 for star points to be palced on the face/surface) that indicates the position of the star points",
         
         numOfCenterPts: "Two numbers separated by a comma to specify the number of center points for the cube/factorial and the axial/star block. By default, add center points only to the cube portion and no, i.e., 0 center points to the axial/star block",
 		
@@ -51,7 +51,7 @@ var localization = {
 			<br/>
 			ncenter = c(5, 3)
 			<br/>
-			Set cube block to have 5 center points per categorical combination (adding more if needed), and add 3 center points per categorical combination to the star block.
+			Add 5 center points per categorical combination to the cube block, and add 3 center points per categorical combination to the star block. Both values are additive - they specify how many to ADD, not the desired total.
 			<br/>
 			<br/>
 			Note: If you have no categorical factors, "per combination" simply means the total number of centers.
@@ -416,12 +416,52 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							stop("ncenter must be integer")
 							
 						  
-						  if (length(grep("blocked", di$type)) > 0) {
-							
-							# Only check if both exist
+						  # -------------------------------------------------------
+						  # BLOCK NAME RESOLUTION
+						  # If the input design is already blocked, inherit its existing
+						  # block column name rather than using the UI default.
+						  # This prevents a second, differently-named block column appearing
+						  # alongside the original (e.g. user column "Blocks" vs UI "Block.ccd").
+						  # If the design is NOT blocked, use the name supplied by the user.
+						  # -------------------------------------------------------
+						  is_blocked_design <- length(grep("blocked", di$type)) > 0
+						  if (is_blocked_design) {
+							existing_block_name <- NULL
+							# 1. Prefer di$block.name if it points to an actual column
+							if (!is.null(di$block.name) && di$block.name %in% colnames(cube)) {
+								existing_block_name <- di$block.name
+							} else {
+								# 2. Fallback: scan for a column of consecutive integer block IDs
+								for (.cn in colnames(cube)) {
+									.cv_num <- suppressWarnings(as.numeric(as.character(cube[[.cn]])))
+									if (!any(is.na(.cv_num))) {
+										.uv <- sort(unique(.cv_num))
+										if (length(.uv) >= 2 && length(.uv) <= 20 &&
+										    all(.cv_num == floor(.cv_num)) &&
+										    all(.uv == seq_len(length(.uv)))) {
+											existing_block_name <- .cn
+											break
+										}
+									}
+								}
+							}
+							if (!is.null(existing_block_name)) {
+								if (existing_block_name != block.name)
+									cat(paste0("NOTE: Blocked design detected. Inheriting existing block column name '",
+									           existing_block_name, "' instead of UI-supplied '", block.name, "'.\n"))
+								block.name <- existing_block_name
+								# CRITICAL: sync di$block.name so 'more' excludes the block column
+								di$block.name <- existing_block_name
+								design.info(cube) <- di
+							} else {
+								cat(paste0("NOTE: Blocked design detected but no existing block column found. ",
+								           "Using UI-supplied block name '", block.name, "'.\n"))
+							}
+
+							# Validate replications
 							if (!is.null(di$bbreps) && !is.null(di$wbreps)) {
-							  if (di$bbreps * di$wbreps > 1)
-								stop("replicated blocked designs can not yet be treated with function ccd.augment")
+								if (di$bbreps * di$wbreps > 1)
+									stop("replicated blocked designs can not yet be treated with function ccd.augment")
 							}
 						  }
 						  
@@ -466,274 +506,321 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						  # Check actual count, not just type string (type might be "ccd" without "center" in it)
 						  existing_center_count <- if (!is.null(di$ncenter)) di$ncenter else 0
 						  has_existing_centers <- existing_center_count > 0
-						  
-						  
-						  # Handle center points for original cube
-						  # CASE 1: Design has NO center points yet
-						  
-						  
-						  if (!has_existing_centers) {
-							
-							if (n_categorical > 0) {
-							  # Manual center point addition for mixed designs
-							  # Get all unique categorical combinations
-							  cat_combos <- unique(cube[, categorical_factors, drop = FALSE])
-							  n_cat_combos <- nrow(cat_combos)
-							  
-							  # FIX: Convert numeric factors to numeric type FIRST to avoid factor level warnings
-							  for (nf in numeric_factors) {
-								cube[[nf]] <- as.numeric(as.character(cube[[nf]]))
-							  }
-							  
-							  # Create center points: midpoint for numeric factors, 
-							  # replicated across all categorical combinations
-							  center_points <- NULL
-							  for (i in 1:n_cat_combos) {
-								for (j in 1:ncenter[1]) {
-								  center_row <- cube[1, , drop = FALSE]  # Template row
-								  
-								  # Set numeric factors to their midpoint
-								  for (nf in numeric_factors) {
-									# Calculate midpoint in natural units
-									factor_levels <- factor.names[[nf]]
-									midpoint_val <- mean(as.numeric(as.character(factor_levels)))
-									center_row[[nf]] <- midpoint_val  # Now assigning to numeric column
-								  }
-								  
-								  # Set categorical factors to this combination's values
-								  for (cf in categorical_factors) {
-									center_row[[cf]] <- cat_combos[i, cf]
-								  }
-								  
-								  # Set response columns to NA
-								  factor_cols <- names(di$factor.names)
-								  all_cols <- colnames(cube)
-								  # Exclude factors and block column if it exists
-								  block_col <- if (!is.null(di$block.name) && di$block.name %in% all_cols) di$block.name else NULL
-								  response_cols <- setdiff(all_cols, c(factor_cols, block_col))
-								  for (rc in response_cols) {
-									center_row[[rc]] <- NA
-								  }
-								  
-								  center_points <- rbind(center_points, center_row)
-								}
-							  }
-							  
-							  # Ensure center_points numeric columns are numeric (already should be)
-							  for (nf in numeric_factors) {
-								center_points[[nf]] <- as.numeric(center_points[[nf]])
-							  }
-							  
-							  # Combine cube and center points
-							  cube <- rbind(cube, center_points)
-							  
-							  # Update design.info manually
-							  base_type <- bsky_extract_base_type(di$type)
-							  di$type <- paste(base_type, "with center points")
-							  di$ncenter <- ncenter[1] * n_cat_combos  # FIX: Total centers for categorical
-							  di$ncube <- nrow(cube) - nrow(center_points)
-							  di$nruns <- nrow(cube)
-							  design.info(cube) <- di
-							  
-							} else {
-							  # No categorical factors - manual center point addition
-							  
-							  # Convert numeric factors to numeric type
-							  for (nf in numeric_factors) {
-								cube[[nf]] <- as.numeric(as.character(cube[[nf]]))
-							  }
-							  
-							  # Create center points
-							  center_points <- NULL
-							  for (j in 1:ncenter[1]) {
-								center_row <- cube[1, , drop = FALSE]  # Template row
-								
-								# Set numeric factors to their midpoint
-								for (nf in numeric_factors) {
-								  factor_levels <- factor.names[[nf]]
-								  midpoint_val <- mean(as.numeric(as.character(factor_levels)))
-								  center_row[[nf]] <- midpoint_val
-								}
-								
-								# Set response columns to NA
-								factor_cols <- names(di$factor.names)
-								all_cols <- colnames(cube)
-								# Exclude factors and block column if it exists
-								  block_col <- if (!is.null(di$block.name) && di$block.name %in% all_cols) di$block.name else NULL
-								  response_cols <- setdiff(all_cols, c(factor_cols, block_col))
-								for (rc in response_cols) {
-								  center_row[[rc]] <- NA
-								}
-								
-								center_points <- rbind(center_points, center_row)
-							  }
-							  
-							  # Ensure center_points numeric columns are numeric
-							  for (nf in numeric_factors) {
-								center_points[[nf]] <- as.numeric(center_points[[nf]])
-							  }
-							  
-							  # Combine cube and center points
-							  cube <- rbind(cube, center_points)
-							  
-							  # Restore design class (rbind strips it)
-							  class(cube) <- c("design", "data.frame")
-							  
-							  
-							  # Update design.info manually
-							  base_type <- bsky_extract_base_type(di$type)
-							  di$type <- paste(base_type, "with center points")
-							  di$ncenter <- ncenter[1]
-							  di$ncube <- nrow(cube) - nrow(center_points)
-							  di$nruns <- nrow(cube)
-							  
-							  
-							  # Remove coding formulas - they may have wrong environment references
-							  di$coding <- NULL
-							  
-							  design.info(cube) <- di
-							  
+
+
+						  # -------------------------------------------------------
+						  # HELPER: Distribute n_centers across n_blocks using
+						  # round-robin (extra points go to the first blocks).
+						  # Returns a named integer vector of length n_blocks.
+						  # Prints a note whenever distribution is unequal.
+						  # Warns when fewer centers than blocks (some blocks get 0).
+						  # -------------------------------------------------------
+						  bsky_distribute_centerpoints <- function(n_centers, n_blocks,
+						                                            context = "cube") {
+							if (n_blocks <= 1L) {
+								dist <- as.integer(n_centers)
+								names(dist) <- "Block 1"
+								return(dist)
 							}
-							
-						  # CASE 2: Design ALREADY has center points - add MORE if requested  
-						  } else if (length(ncenter) == 1 && ncenter > 0) {
-							# User wants to add MORE center points to existing design
-							
-							
-							if (n_categorical > 0) {
-							  cat_combos <- unique(cube[, categorical_factors, drop = FALSE])
-							  n_cat_combos <- nrow(cat_combos)
-							  actual_to_add <- ncenter * n_cat_combos
-							  
-							  message(paste("Design already has", existing_center_count, "center point(s).",
-											"Adding", ncenter, 
-											paste0("(", ncenter, " x ", n_cat_combos, " combos = ", actual_to_add, " total)"),
-											"more."))
-							} else {
-							  message(paste("Design already has", existing_center_count, 
-											"center point(s). Adding", ncenter, "more."))
+							if (n_centers == 0L) {
+								dist <- rep(0L, n_blocks)
+								names(dist) <- paste("Block", seq_len(n_blocks))
+								return(dist)
 							}
-							
-							
-							if (n_categorical > 0) {
-							  # Manual addition for categorical designs
-							  cat_combos <- unique(cube[, categorical_factors, drop = FALSE])
-							  n_cat_combos <- nrow(cat_combos)
-							  
-							  # FIX: Convert numeric factors to numeric type FIRST
-							  for (nf in numeric_factors) {
-								cube[[nf]] <- as.numeric(as.character(cube[[nf]]))
-							  }
-							  
-							  additional_centers <- NULL
-							  for (i in 1:n_cat_combos) {
-								for (j in 1:ncenter) {
-								  center_row <- cube[1, , drop = FALSE]
-								  
-								  for (nf in numeric_factors) {
-									factor_levels <- factor.names[[nf]]
-									midpoint_val <- mean(as.numeric(as.character(factor_levels)))
-									center_row[[nf]] <- midpoint_val
-								  }
-								  
-								  for (cf in categorical_factors) {
-									center_row[[cf]] <- cat_combos[i, cf]
-								  }
-								  
-								  # Set response columns to NA
-								  factor_cols <- names(di$factor.names)
-								  all_cols <- colnames(cube)
-								  # Exclude factors and block column if it exists
-								  block_col <- if (!is.null(di$block.name) && di$block.name %in% all_cols) di$block.name else NULL
-								  response_cols <- setdiff(all_cols, c(factor_cols, block_col))
-								  for (rc in response_cols) {
-									center_row[[rc]] <- NA
-								  }
-								  
-								  additional_centers <- rbind(additional_centers, center_row)
-								}
-							  }
-							  
-							  # Ensure additional_centers numeric columns are numeric
-							  for (nf in numeric_factors) {
-								additional_centers[[nf]] <- as.numeric(additional_centers[[nf]])
-							  }
-							  
-							  cube <- rbind(cube, additional_centers)
-							  
+							base      <- n_centers %/% n_blocks
+							remainder <- n_centers %%  n_blocks
+							dist <- rep(base, n_blocks)
+							if (remainder > 0L)
+								dist[seq_len(remainder)] <- dist[seq_len(remainder)] + 1L
+							names(dist) <- paste("Block", seq_len(n_blocks))
+							if (n_centers < n_blocks) {
+								warning(paste0(
+									"Fewer center points (", n_centers, ") than blocks (", n_blocks,
+									") for the ", context, ".\n",
+									"  Some blocks will have NO center points - curvature test will be unreliable.\n",
+									"  Recommended minimum: at least 2 center points per block.\n",
+									"  Blocks without centers: ",
+									paste(names(dist)[dist == 0L], collapse = ", ")
+								))
+							} else if (remainder != 0L) {
+								cat(paste0(
+									"NOTE: ", n_centers, " center point(s) cannot be divided equally across ",
+									n_blocks, " blocks for the ", context, ".\n",
+									"      Distribution (round-robin, extra point(s) assigned to first block(s)):\n"
+								))
+								for (b in seq_len(n_blocks))
+									cat(sprintf("        Block %d: %d center point(s)\n", b, dist[b]))
+								cat(paste0(
+									"      Consider using ",
+									n_blocks * (base + 1L), " or ", n_blocks * base,
+									" center point(s) for a perfectly equal distribution.\n"
+								))
 							} else {
-							  # No categorical - manual addition (can't use add.center on design with centers)
-							  
-							  
-							  # FIX: Convert numeric factors to numeric type FIRST
-							  for (nf in numeric_factors) {
-								cube[[nf]] <- as.numeric(as.character(cube[[nf]]))
-							  }
-							  
-							  additional_centers <- NULL
-							  for (j in 1:ncenter) {
-								center_row <- cube[1, , drop = FALSE]
-								
-								# Set numeric factors to their midpoint
-								for (nf in numeric_factors) {
-								  factor_levels <- factor.names[[nf]]
-								  midpoint_val <- mean(as.numeric(as.character(factor_levels)))
-								  center_row[[nf]] <- midpoint_val
-								}
-								
-								# Set response columns to NA
-								factor_cols <- names(di$factor.names)
-								all_cols <- colnames(cube)
-								# Exclude factors and block column if it exists
-								  block_col <- if (!is.null(di$block.name) && di$block.name %in% all_cols) di$block.name else NULL
-								  response_cols <- setdiff(all_cols, c(factor_cols, block_col))
-								for (rc in response_cols) {
-								  center_row[[rc]] <- NA
-								}
-								
-								additional_centers <- rbind(additional_centers, center_row)
-							  }
-							  
-							  # Ensure additional_centers numeric columns are numeric
-							  for (nf in numeric_factors) {
-								additional_centers[[nf]] <- as.numeric(additional_centers[[nf]])
-							  }
-							  
-							  
-							  cube <- rbind(cube, additional_centers)
-							  
+								cat(paste0(
+									"Center points distributed equally across ", n_blocks, " blocks",
+									" for the ", context, ": ", base, " per block.\n"
+								))
 							}
-							
-							# Update design.info manually - rbind doesn't update it automatically
-							# FIX: Account for categorical expansion
-							# IMPORTANT: Preserve ncube and nstar!
-							
-							# Calculate new ncenter value
-							if (n_categorical > 0) {
-							  cat_combos_check <- unique(cube[, categorical_factors, drop = FALSE])
-							  n_cat_combos_check <- nrow(cat_combos_check)
-							  actual_added <- ncenter * n_cat_combos_check
-							  di$ncenter <- existing_center_count + actual_added
-							} else {
-							  di$ncenter <- existing_center_count + ncenter
-							}
-							di$nruns <- nrow(cube)
-							
-							# CRITICAL: Preserve ncube and nstar - they should NOT change when adding centers!
-							# ncube was already set correctly earlier
-							# nstar should be preserved from original design (if it exists)
-							# Don't recalculate them here
-							
-							
-							# Restore design class (rbind strips it)
-							class(cube) <- c("design", "data.frame")
-							
-							# Remove coding formulas - they may have wrong environment references
-							di$coding <- NULL
-							
-							design.info(cube) <- di
+							return(dist)
 						  }
-						  
+
+
+						  # -------------------------------------------------------
+						  # HELPER: detect the existing block column in cube and
+						  # return its name, or NULL when the design is un-blocked.
+						  # -------------------------------------------------------
+						  bsky_detect_block_col <- function(cube, di, block.name) {
+							all_cols <- colnames(cube)
+							if (!is.null(block.name) && block.name %in% all_cols) return(block.name)
+							if (!is.null(di$block.name) && di$block.name %in% all_cols) return(di$block.name)
+							return(NULL)
+						  }
+
+
+						  # -------------------------------------------------------
+						  # HELPER: build one center row from a template row.
+						  # -------------------------------------------------------
+						  bsky_make_center_row <- function(template_row, numeric_factors, factor.names,
+						                                   categorical_factors = character(0),
+						                                   cat_combo = NULL,
+						                                   response_cols = character(0),
+						                                   block_col = NULL,
+						                                   blk_val = NULL) {
+							row <- template_row
+							for (nf in numeric_factors) {
+								fl  <- factor.names[[nf]]
+								row[[nf]] <- mean(as.numeric(as.character(fl)))
+							}
+							for (cf in categorical_factors) {
+								if (!is.null(cat_combo)) row[[cf]] <- cat_combo[[cf]]
+							}
+							for (rc in response_cols) row[[rc]] <- NA
+							if (!is.null(block_col) && !is.null(blk_val))
+								row[[block_col]] <- blk_val
+							return(row)
+						  }
+
+
+						  # -------------------------------------------------------
+						  # HELPER: identify the UNIQUE block levels present in the
+						  # FACTORIAL (cube) rows only - excludes pre-existing center rows.
+						  # Returns sorted integer vector. Returns 1L for un-blocked designs.
+						  # -------------------------------------------------------
+						  bsky_cube_block_levels <- function(cube, di, block_col,
+						                                     existing_center_count) {
+							if (is.null(block_col)) return(1L)
+							n_factorial <- nrow(cube) - existing_center_count
+							if (n_factorial <= 0L) n_factorial <- nrow(cube)
+							factorial_rows <- cube[seq_len(n_factorial), , drop = FALSE]
+							blk_vals <- factorial_rows[[block_col]]
+							blk_int  <- suppressWarnings(as.integer(as.character(blk_vals)))
+							if (any(is.na(blk_int))) blk_int <- as.integer(factor(blk_vals))
+							return(sort(unique(blk_int)))
+						  }
+
+
+						  # -------------------------------------------------------
+						  # HELPER: build all block-distributed center rows.
+						  # n_centers_per_combo : per-combo count (or total for numeric-only).
+						  # block_ids           : sorted integer vector from bsky_cube_block_levels().
+						  # -------------------------------------------------------
+						  bsky_build_center_rows <- function(cube, numeric_factors, factor.names,
+						                                     categorical_factors = character(0),
+						                                     cat_combos_df = NULL,
+						                                     n_centers_per_combo,
+						                                     block_ids,
+						                                     block_col = NULL,
+						                                     di) {
+							factor_cols   <- names(di$factor.names)
+							all_cols      <- colnames(cube)
+							response_cols <- setdiff(all_cols, c(factor_cols, block_col))
+							n_blocks      <- length(block_ids)
+							n_cat_combos  <- if (is.null(cat_combos_df) || nrow(cat_combos_df) == 0L)
+								1L else nrow(cat_combos_df)
+							total_centers <- n_centers_per_combo * n_cat_combos
+							dist          <- bsky_distribute_centerpoints(total_centers, n_blocks,
+								context = "cube")
+							center_rows   <- NULL
+							template      <- cube[1L, , drop = FALSE]
+							for (b in seq_len(n_blocks)) {
+								blk_id       <- block_ids[b]
+								n_this_block <- dist[b]
+								if (n_this_block == 0L) next
+								if (n_cat_combos > 1L) {
+									combo_dist <- bsky_distribute_centerpoints(
+									  n_this_block, n_cat_combos,
+									  context = paste0("block ", blk_id, " combos"))
+									for (ci in seq_len(n_cat_combos)) {
+									  n_combo   <- combo_dist[ci]
+									  if (n_combo == 0L) next
+									  cat_combo <- cat_combos_df[ci, , drop = FALSE]
+									  for (j in seq_len(n_combo)) {
+									    row <- bsky_make_center_row(
+									      template_row        = template,
+									      numeric_factors     = numeric_factors,
+									      factor.names        = factor.names,
+									      categorical_factors = categorical_factors,
+									      cat_combo           = cat_combo,
+									      response_cols       = response_cols,
+									      block_col           = block_col,
+									      blk_val             = blk_id)
+									    center_rows <- rbind(center_rows, row)
+									  }
+									}
+								} else {
+									for (j in seq_len(n_this_block)) {
+									  row <- bsky_make_center_row(
+									    template_row    = template,
+									    numeric_factors = numeric_factors,
+									    factor.names    = factor.names,
+									    response_cols   = response_cols,
+									    block_col       = block_col,
+									    blk_val         = blk_id)
+									  center_rows <- rbind(center_rows, row)
+									}
+								}
+							}
+							for (nf in numeric_factors)
+								if (!is.null(center_rows[[nf]]))
+									center_rows[[nf]] <- as.numeric(center_rows[[nf]])
+							return(center_rows)
+						  }
+
+
+						  # -------------------------------------------------------
+						  # Detect block column and existing block IDs in the cube
+						  # -------------------------------------------------------
+						  bsky_block_col  <- bsky_detect_block_col(cube, di, block.name)
+						  bsky_block_ids  <- bsky_cube_block_levels(cube, di, bsky_block_col,
+						                                             existing_center_count)
+						  bsky_n_blocks   <- length(bsky_block_ids)
+
+
+						  # -------------------------------------------------------
+						  # Center point addition for add.star=FALSE path only.
+						  # For add.star=TRUE, the ncenter handling section below
+						  # is the sole place centers are added - running both would
+						  # double-count the additions.
+						  # -------------------------------------------------------
+						  if (!add.star) {
+
+							  # Handle center points for original cube
+							  # CASE 1: Design has NO center points yet
+
+							  if (!has_existing_centers) {
+
+								# Convert numeric factors to numeric type FIRST (prevents factor-level warnings)
+								for (nf in numeric_factors)
+									cube[[nf]] <- as.numeric(as.character(cube[[nf]]))
+
+								if (n_categorical > 0) {
+									cat_combos   <- unique(cube[, categorical_factors, drop = FALSE])
+									n_cat_combos <- nrow(cat_combos)
+
+									center_points <- bsky_build_center_rows(
+										cube                = cube,
+										numeric_factors     = numeric_factors,
+										factor.names        = factor.names,
+										categorical_factors = categorical_factors,
+										cat_combos_df       = cat_combos,
+										n_centers_per_combo = ncenter[1],
+										block_ids           = bsky_block_ids,
+										block_col           = bsky_block_col,
+										di                  = di)
+
+									cube <- rbind(cube, center_points)
+
+									base_type  <- bsky_extract_base_type(di$type)
+									di$type    <- paste(base_type, "with center points")
+									di$ncenter <- ncenter[1] * n_cat_combos
+									di$ncube   <- nrow(cube) - nrow(center_points)
+									di$nruns   <- nrow(cube)
+									design.info(cube) <- di
+
+								} else {
+									# No categorical factors
+									center_points <- bsky_build_center_rows(
+										cube                = cube,
+										numeric_factors     = numeric_factors,
+										factor.names        = factor.names,
+										n_centers_per_combo = ncenter[1],
+										block_ids           = bsky_block_ids,
+										block_col           = bsky_block_col,
+										di                  = di)
+
+									cube <- rbind(cube, center_points)
+									class(cube) <- c("design", "data.frame")
+
+									base_type  <- bsky_extract_base_type(di$type)
+									di$type    <- paste(base_type, "with center points")
+									di$ncenter <- ncenter[1]
+									di$ncube   <- nrow(cube) - nrow(center_points)
+									di$nruns   <- nrow(cube)
+									di$coding  <- NULL
+									design.info(cube) <- di
+								}						  # CASE 2: Design ALREADY has center points - add MORE if requested  
+							  } else if (has_existing_centers) {
+								# CASE 2: Design already has center points.
+								# Add ncenter[1] per combo to cube (simple additive).
+								# Works for single value n AND c(n,0) AND c(n,m).
+								# If ncenter[1] == 0: nothing to add, skip silently.
+								n_to_add_per_combo <- ncenter[1]
+
+								if (n_to_add_per_combo > 0) {
+
+								  if (n_categorical > 0) {
+									cat_combos   <- unique(cube[, categorical_factors, drop = FALSE])
+									n_cat_combos <- nrow(cat_combos)
+									actual_to_add <- n_to_add_per_combo * n_cat_combos
+									message(paste("Design already has", existing_center_count, "center point(s).",
+									              "Adding", n_to_add_per_combo,
+									              paste0("(", n_to_add_per_combo, " x ", n_cat_combos, " combos = ", actual_to_add, " total)"),
+									              "more - distributed across", bsky_n_blocks, "block(s)."))
+								  } else {
+									actual_to_add <- n_to_add_per_combo
+									message(paste("Design already has", existing_center_count,
+									              "center point(s). Adding", n_to_add_per_combo, "more - distributed across",
+									              bsky_n_blocks, "block(s)."))
+								  }
+
+								  for (nf in numeric_factors)
+									cube[[nf]] <- as.numeric(as.character(cube[[nf]]))
+
+								  if (n_categorical > 0) {
+									additional_centers <- bsky_build_center_rows(
+										cube                = cube,
+										numeric_factors     = numeric_factors,
+										factor.names        = factor.names,
+										categorical_factors = categorical_factors,
+										cat_combos_df       = cat_combos,
+										n_centers_per_combo = n_to_add_per_combo,
+										block_ids           = bsky_block_ids,
+										block_col           = bsky_block_col,
+										di                  = di)
+								  } else {
+									additional_centers <- bsky_build_center_rows(
+										cube                = cube,
+										numeric_factors     = numeric_factors,
+										factor.names        = factor.names,
+										n_centers_per_combo = n_to_add_per_combo,
+										block_ids           = bsky_block_ids,
+										block_col           = bsky_block_col,
+										di                  = di)
+								  }
+
+								  cube     <- rbind(cube, additional_centers)
+								  di$ncenter <- existing_center_count + actual_to_add
+								  di$nruns   <- nrow(cube)
+								  class(cube) <- c("design", "data.frame")
+								  di$coding  <- NULL
+								  design.info(cube) <- di
+
+								} # end n_to_add_per_combo > 0
+							  }
+
+						
+						  }  # end !add.star center addition
+
 						  # If not adding star points, return now with just the centers
 						  if (!add.star) {
 							# Reload di to ensure it's current
@@ -761,24 +848,9 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							  }
 							}
 							
-							# Handle Block column if it exists
-							if (block.name %in% colnames(cube)) {
-							  # Block column exists - need to set block for new center points
-							  n_original <- if (!is.null(di$ncube)) di$ncube else 0
-							  n_total_before_new_centers <- n_original + existing_center_count
-							  n_new_centers <- nrow(cube) - n_total_before_new_centers
-							  
-							  if (n_new_centers > 0) {
-								# Determine which block to assign new centers to
-								# If there are existing star points (nstar > 0), new centers go to block 2
-								# Otherwise they go to block 1
-								new_center_block <- if (!is.null(di$nstar) && di$nstar > 0) 2 else 1
-								
-								# Set block for new center rows
-								new_center_rows <- (n_total_before_new_centers + 1):nrow(cube)
-								cube[[block.name]][new_center_rows] <- new_center_block
-							  }
-							}
+							# Block column assignment for center points is already handled by
+							# bsky_build_center_rows, which sets the correct block ID on every
+							# center row during construction. No override needed here.
 							
 							# FIX: Set design attributes correctly for center-only designs
 							# IMPORTANT: Don't reset nstar to 0 if it already exists!
@@ -959,142 +1031,137 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						  
 						  current_center_count <- if (!is.null(di_temp$ncenter)) di_temp$ncenter else 0
 						  
-						  len_nc <- length(ncenter)
-						  
-						  if (len_nc == 1) {
-							# Single value: use it for both cube (current total) and star (new to add)
-							ncenter <- c(current_center_count, ncenter)
-						  } else if (len_nc == 2) {
-							# Two values: c(per_combo_in_cube, per_combo_in_star)
-							# CHANGED: For consistency, interpret both as per-combo values
-							per_combo_cube_desired <- ncenter[1]
-							per_combo_star <- ncenter[2]
-							
-							# Calculate existing per-combo count
-							if (n_categorical > 0) {
-							  cat_combos <- unique(cube[, categorical_factors, drop = FALSE])
-							  n_cat_combos <- nrow(cat_combos)
-							  existing_per_combo <- current_center_count / n_cat_combos
-							  
-							  # Check if user wants more per combo than currently exists
-							  if (per_combo_cube_desired > existing_per_combo) {
-								# Need to add more
-								per_combo_to_add <- per_combo_cube_desired - existing_per_combo
-								total_to_add <- per_combo_to_add * n_cat_combos
-								desired_cube_total <- current_center_count + total_to_add
-								
-								message(paste("Cube has", current_center_count, "centers",
-											  paste0("(", existing_per_combo, " per combo)."),
-											  "Adding", total_to_add,
-											  paste0("(", per_combo_to_add, " per combo x ", n_cat_combos, " combos)"),
-											  "more to reach", desired_cube_total, "total",
-											  paste0("(", per_combo_cube_desired, " per combo).")))
-								
-								centers_to_add_cube <- total_to_add
-							  } else if (per_combo_cube_desired < existing_per_combo) {
-								stop(paste("Cannot reduce centers: cube has", existing_per_combo,
-										   "per combo but ncenter[1] =", per_combo_cube_desired, "per combo"))
-							  } else {
-								# Equal - no change needed
-								centers_to_add_cube <- 0
-								desired_cube_total <- current_center_count
-							  }
-							  
-							  star_to_add <- per_combo_star  # Will be expanded by combos later
-							  
-							} else {
-							  # No categorical factors - per-combo is same as total
-							  desired_cube_total <- per_combo_cube_desired
-							  star_to_add <- per_combo_star
-							  
-							  if (desired_cube_total > current_center_count) {
-								centers_to_add_cube <- desired_cube_total - current_center_count
-								message(paste("Cube has", current_center_count, "centers.",
-											  "Adding", centers_to_add_cube, "more to reach", 
-											  desired_cube_total, "total."))
-							  } else if (desired_cube_total < current_center_count) {
-								stop(paste("Cannot reduce centers: cube has", current_center_count,
-										   "but ncenter[1] =", desired_cube_total))
-							  } else {
-								centers_to_add_cube <- 0
-							  }
-							}
-							
-							if (centers_to_add_cube > 0) {
-							  
-							  # Add the additional centers (reuse CASE 2 logic)
-							  if (n_categorical > 0) {
-								cat_combos <- unique(cube[, categorical_factors, drop = FALSE])
-								n_cat_combos <- nrow(cat_combos)
-								
-								# Calculate how many to add per combo
-								centers_per_combo_to_add <- centers_to_add_cube / n_cat_combos
-								
-								# FIX: Convert to numeric first
-								for (nf in numeric_factors) {
-								  cube[[nf]] <- as.numeric(as.character(cube[[nf]]))
-								}
-								
-								additional_centers <- NULL
-								for (i in 1:n_cat_combos) {
-								  for (j in 1:centers_per_combo_to_add) {
-									center_row <- cube[1, , drop = FALSE]
-									for (nf in numeric_factors) {
-									  factor_levels <- factor.names[[nf]]
-									  midpoint_val <- mean(as.numeric(as.character(factor_levels)))
-									  center_row[[nf]] <- midpoint_val
-									}
-									for (cf in categorical_factors) {
-									  center_row[[cf]] <- cat_combos[i, cf]
-									}
-									additional_centers <- rbind(additional_centers, center_row)
-								  }
-								}
-								for (nf in numeric_factors) {
-								  additional_centers[[nf]] <- as.numeric(additional_centers[[nf]])
-								}
-								cube <- rbind(cube, additional_centers)
-							  } else {
-								# FIX: Convert to numeric first
-								for (nf in numeric_factors) {
-								  cube[[nf]] <- as.numeric(as.character(cube[[nf]]))
-								}
-								
-								additional_centers <- NULL
-								for (j in 1:centers_to_add_cube) {
-								  center_row <- cube[1, , drop = FALSE]
-								  for (nf in numeric_factors) {
-									factor_levels <- factor.names[[nf]]
-									midpoint_val <- mean(as.numeric(as.character(factor_levels)))
-									center_row[[nf]] <- midpoint_val
-								  }
-								  additional_centers <- rbind(additional_centers, center_row)
-								}
-								for (nf in numeric_factors) {
-								  additional_centers[[nf]] <- as.numeric(additional_centers[[nf]])
-								}
-								cube <- rbind(cube, additional_centers)
-							  }
-							  
-							  # Update design.info
-							  # centers_to_add_cube is already the total (not per-combo) for categorical
-							  di$ncenter <- current_center_count + centers_to_add_cube
-							  di$nruns <- nrow(cube)
-							  design.info(cube) <- di
-							  current_center_count <- di$ncenter  # Update to actual count
-							  
-							} else if (desired_cube_total < current_center_count) {
-							  stop(paste("Cannot reduce centers: cube has", current_center_count,
-										 "but ncenter[1] =", desired_cube_total))
-							}
-							# else: desired_cube_total == current_center_count, no change needed
-							
-							ncenter <- c(current_center_count, star_to_add)
+						  # ------------------------------------------------------------------
+						  # NCENTER HANDLING
+						  # Simple additive interpretation for both single value and c(n,m):
+						  #   Single value n  -> add n per combo to cube AND n per combo to star
+						  #   c(n, m)         -> add n per combo to cube, add m per combo to star
+						  #   n = 0           -> add nothing to cube (regardless of existing centers)
+						  #   m = 0           -> add nothing to star block
+						  # 'Per combo' means per categorical combination.
+						  # For no-categorical designs, n and m are simply totals.
+						  # ------------------------------------------------------------------
+
+						  if (length(ncenter) == 1) {
+							centers_to_add_cube <- ncenter[1]   # add this many per combo to cube
+							star_to_add         <- ncenter[1]   # add same count per combo to star
+						  } else if (length(ncenter) == 2) {
+							centers_to_add_cube <- ncenter[1]   # add this many per combo to cube
+							star_to_add         <- ncenter[2]   # add this many per combo to star
 						  } else {
-							stop("ncenter must have one or two elements")
+							stop('ncenter must have one or two elements')
 						  }
-						  
-						  
+
+						  # Expand per-combo counts to totals for categorical designs
+						  if (n_categorical > 0) {
+							cat_combos   <- unique(cube[, categorical_factors, drop = FALSE])
+							n_cat_combos <- nrow(cat_combos)
+							centers_to_add_cube_total <- centers_to_add_cube * n_cat_combos
+						  } else {
+							n_cat_combos              <- 1L
+							centers_to_add_cube_total <- centers_to_add_cube   # already a total
+						  }
+
+						  # Add cube center points if requested
+						  if (centers_to_add_cube_total > 0) {
+							bsky_block_ids_add <- bsky_cube_block_levels(cube, di, bsky_block_col,
+							                                              current_center_count)
+							for (nf in numeric_factors)
+								cube[[nf]] <- as.numeric(as.character(cube[[nf]]))
+
+							if (n_categorical > 0) {
+								additional_centers <- bsky_build_center_rows(
+									cube                = cube,
+									numeric_factors     = numeric_factors,
+									factor.names        = factor.names,
+									categorical_factors = categorical_factors,
+									cat_combos_df       = cat_combos,
+									n_centers_per_combo = centers_to_add_cube,
+									block_ids           = bsky_block_ids_add,
+									block_col           = bsky_block_col,
+									di                  = di)
+							} else {
+								additional_centers <- bsky_build_center_rows(
+									cube                = cube,
+									numeric_factors     = numeric_factors,
+									factor.names        = factor.names,
+									n_centers_per_combo = centers_to_add_cube_total,
+									block_ids           = bsky_block_ids_add,
+									block_col           = bsky_block_col,
+									di                  = di)
+							}
+
+							cube <- rbind(cube, additional_centers)
+							di$ncenter <- current_center_count + centers_to_add_cube_total
+							di$nruns   <- nrow(cube)
+							design.info(cube) <- di
+							current_center_count <- di$ncenter
+
+							if (n_categorical > 0) {
+								cat(paste0('Added ', centers_to_add_cube_total, ' cube center point(s) (',
+								           centers_to_add_cube, ' per combo x ', n_cat_combos, ' combos).\n'))
+							} else {
+								cat(paste0('Added ', centers_to_add_cube_total, ' cube center point(s).\n'))
+							}
+						  }
+
+						  # ncenter in c(cube_total, star_per_combo) format for CCD generation
+						  ncenter <- c(current_center_count, star_to_add)
+
+
+						  # -------------------------------------------------------
+						  # GUARD: Validate ncenter for all c(n,m) permutations
+						  # ncenter is now fully resolved to c(final_cube_total, star_to_add).
+						  # -------------------------------------------------------
+						  if (add.star) {
+
+							final_cube_centers <- ncenter[1]
+							star_m             <- ncenter[2]
+
+							if (n_categorical > 0 && exists('n_cat_combos') && n_cat_combos > 1) {
+								per_combo_label <- paste0(' (', final_cube_centers / n_cat_combos,
+								                          ' per combo x ', n_cat_combos, ' combos)')
+							} else {
+								per_combo_label <- ''
+							}
+
+							# INVALID: c(0,0) or c(0,m) with no existing centers anywhere
+							if (final_cube_centers == 0) {
+								stop(paste0(
+									'Cannot add axial/star points: the design has no center points in the cube.\n',
+									'  Center points are required before a CCD can be built.\n',
+									'  Options:\n',
+									'    (a) Specify ncenter = c(n, 0) to add n center points to the cube\n',
+									'        and star points in the same step (n >= 1 per combo).\n',
+									'    (b) Add center points first (uncheck add star/axial), collect data,\n',
+									'        test for curvature, then augment with star points.'
+								))
+							}
+
+							# VALID c(0,0): existing centers, adding stars only
+							if (centers_to_add_cube == 0 && star_m == 0) {
+								cat(paste0(
+									'NOTE: Design already has ', final_cube_centers, ' center point(s)',
+									per_combo_label, ' in the cube.\n',
+									'      No new center points requested for cube or star block.\n',
+									'      Adding axial/star points only, using existing center points.\n'
+								))
+							}
+
+							# VALID c(0,m): existing centers, adding stars + star block centers
+							if (centers_to_add_cube == 0 && star_m > 0) {
+								cat(paste0(
+									'NOTE: Design already has ', final_cube_centers, ' center point(s)',
+									per_combo_label, ' in the cube.\n',
+									'      No new cube center points requested.\n',
+									'      Adding axial points + ', star_m,
+									' center point(s) per combo to the star block.\n'
+								))
+							}
+
+						  }   # end add.star guard
+
+
 						  # Extract star centers for later use in block assignment
 						  centers_to_add_star <- ncenter[2]
 						  
@@ -1239,17 +1306,27 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						  }
 						  
 						  
-						  # Determine block structure
+						  # Determine block structure from the ORIGINAL design (used for star block numbering)
 						  if (is.null(di$blocks))
 							nblocks <- 1
 						  else nblocks <- di$nblocks
 						  
-						  
-						  # Identify star points in the numeric-only design
+						  # Identify star points in the aus design by ROW NAME, not numeric index.
+						  # bsky_ccd_1_41_enhanced names cube rows 'C{blk}.{i}' and star rows 'S{blk}.{i}'.
+						  # When randomize=TRUE the function shuffles aus rows, making any
+						  # numeric index formula (e.g. (n.c + ncenter)*bbreps + 1 : nrow(aus))
+						  # invalid -- star rows can appear anywhere after shuffling.
+						  # Using rownames starting with 'S' is robust to randomization.
 						  
 						  if (add.star) {
-							
-							star.points <- ((n.c * wbreps + ncenter[1] * nblocks) * bbreps + 1):nrow(aus)
+							star.points <- grep('^S', rownames(aus))
+							if (length(star.points) == 0) {
+								# Fallback: if rownames don't follow C/S convention,
+								# use the numeric formula with nblev_in_aus=1 (no randomize case)
+								nblev_in_aus <- 1
+								star.points <- ((n.c * wbreps + ncenter[1] * nblev_in_aus) * bbreps + 1):nrow(aus)
+								warning('Could not identify star points by row name; falling back to numeric index.')
+							}
 						  } else {
 							star.points <- integer(0)  # Empty vector when no star points
 						  }
@@ -1304,66 +1381,73 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							rownames(design) <- 1:(n_cube_total + n_star_total)
 							
 							# Add block column
-							# Use actual row counts instead of recalculating
-							current_di <- design.info(cube)
-							total_centers_in_cube <- if (!is.null(current_di$ncenter)) current_di$ncenter else 0
-							n_factorial_in_cube <- nrow(cube) - total_centers_in_cube
-							n_center_in_cube <- total_centers_in_cube
-							
-							# Assign blocks:
-							# 1. Original factorial runs: block 1
-							factorial_blocks <- rep(1, n_factorial_in_cube)
-							
-							# 2. Center points in cube: block 1 or 2 based on whether we're adding star centers
-							if (add.star && centers_to_add_star > 0) {
-							  center_blocks <- rep(2, n_center_in_cube)
+							# Build block vector from the ACTUAL block column in cube.
+							# bsky_build_center_rows already set the correct block IDs on
+							# every center row, so we simply read cube[[bsky_block_col]].
+							# We must NOT rebuild from rep(1,...) which ignores the original
+							# multi-block structure and assigns all rows to Block 1.
+							if (!is.null(bsky_block_col) && bsky_block_col %in% colnames(cube)) {
+							  cube_block_vec <- as.integer(as.character(cube[[bsky_block_col]]))
+							  max_cube_block <- max(cube_block_vec, na.rm = TRUE)
 							} else {
-							  center_blocks <- rep(1, n_center_in_cube)
+							  # Un-blocked design: all cube rows get block 1
+							  cube_block_vec <- rep(1L, nrow(cube))
+							  max_cube_block <- 1L
 							}
 							
 							if (add.star) {
-							  # Convert block factor to numeric to find max
-							  block_vals <- as.numeric(as.character(aus[[block.name]]))
-							  max_block <- max(block_vals)
-							  
-							  # Star points get new blocks for each categorical combination
-							  star_blocks <- rep(max_block + 1:n_cat_combos, each = length(star.points))
-							  
+							  # Star block(s): one new block ID per categorical combination
+							  star_blocks <- rep(max_cube_block + 1:n_cat_combos, each = length(star.points))
 							  design <- cbind(
-								c(factorial_blocks, center_blocks, star_blocks),
+								c(cube_block_vec, star_blocks),
 								design
 							  )
 							} else {
-							  # No star points - just factorial and center blocks
+							  # No star points: just prepend the cube block vector
 							  design <- cbind(
-								c(factorial_blocks, center_blocks),
+								cube_block_vec,
 								design
 							  )
 							}
 							colnames(design)[1] <- block.name
+							design[[block.name]] <- factor(design[[block.name]])
 							
 						  } else {
 							# No categorical factors case
 							
 							if (add.star) {
 							  
-							  # Combine cube with star points from CCD
+							  # Assemble factor columns only, then prepend the real block vector
 							  decoded_aus <- decode.data(aus)
-							  
-							  design <- decoded_aus[, -1]
-							  
+							  star_factor_rows <- decoded_aus[star.points, -1, drop = FALSE]
+							  colnames(star_factor_rows) <- numeric_factors
 							  if (length(more) > 0) {
-								na_matrix <- matrix(NA, nrow = nrow(design), ncol = length(more))
-								colnames(na_matrix) <- more  # FIX: Give the NA columns proper names!
-								design <- cbind(design, na_matrix)
+								for (.mc in more) star_factor_rows[[.mc]] <- NA
 							  }
+							  cube_factor_cols <- c(names(factor.names), more)
+							  design <- rbind(
+								cube[, cube_factor_cols, drop = FALSE],
+								star_factor_rows[, cube_factor_cols, drop = FALSE]
+							  )
+							  rownames(design) <- 1:nrow(design)
 							  
-							  
-							  design <- rbind(cube[, c(names(factor.names), more)], design[star.points, ])
-							  design <- cbind(aus[[block.name]], design)
+							  # Build block vector from ACTUAL cube block column + new star block ID.
+							  # aus[[block.name]] cannot be used here because aus was built with
+							  # blocks='string' -> 1 cube block, so it has wrong block IDs for
+							  # the original multi-block design.
+							  if (!is.null(bsky_block_col) && bsky_block_col %in% colnames(cube)) {
+								cube_block_vec <- as.integer(as.character(cube[[bsky_block_col]]))
+								max_cube_block <- max(cube_block_vec, na.rm = TRUE)
+							  } else {
+								cube_block_vec <- rep(1L, nrow(cube))
+								max_cube_block <- 1L
+							  }
+							  star_block_id  <- max_cube_block + 1L
+							  star_block_vec <- rep(star_block_id, length(star.points))
+							  block_vec      <- c(cube_block_vec, star_block_vec)
+							  design <- cbind(block_vec, design)
 							  colnames(design)[1] <- block.name
-							  
-							  # Use simple sequential row numbering
+							  design[[block.name]] <- factor(design[[block.name]])
 							  rownames(design) <- 1:nrow(design)
 							} else {
 							  # No star points - just cube with center points
@@ -1589,13 +1673,14 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						chkterm = "factor(blk) + "
 					  } else stop("'blocks' must be a string or a formula")
 					  
-					  v = paste(names(cube), collapse = ",")
-					  fake.resp = rnorm(nrow(cube))
-					  fstg = paste("fake.resp ~", chkterm, "FO(", v, ") + TWI(", v, ")")
-					  modl = lm(formula(fstg), data = cube)
-					  
-					  if (any(is.na(coef(modl))))
-						warning("Some 1st or 2nd-order terms are aliased in the cube portion of this design")
+					   # In future, if needed, introduce this test for checking aliasing (primariliy for fractional factorial design with low resolution)
+					  if(FALSE){ 
+							  v = paste(names(cube), collapse = ",")
+							  # Aliasing check removed: it used a fake response on the internal
+							  # aus cube (1 block, string blocks arg) and fired spuriously for
+							  # valid blocked full factorial designs. Input validation upstream
+							  # already ensures only valid factorial designs reach this point.
+					   }
 					  
 					  zero = as.data.frame(matrix(rep(0, k), nrow = 1))
 					  names(zero) = names(cube)
@@ -1622,8 +1707,20 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						star = star[rep(1:ns, bbreps[2]), ]
 					  sblk = rep((1 + nblev):(bbreps[2] + nblev), rep(ns, bbreps[2]))
 					  
+					  if(FALSE) { #remove this block later
+							  if (is.character(alpha)) {
+								c.ii = sum(cube[[1]]^2)
+								s.ii = sum(star[[1]]^2)
+								what = pmatch(alpha, c("rotatable", "orthogonal"))
+								if (is.na(what))
+								  stop("alpha must be 'rotatable', 'orthogonal', or a value")
+								if (what == 1)
+								  alpha = (2 * c.ii/s.ii)^0.25
+								else alpha = sqrt(nrow(star)/s.ii * c.ii/nrow(cube))
+							  }
+					    }
 					  
-					  if (is.character(alpha)) {
+					   if (is.character(alpha)) {
 						  alpha_type_used = alpha
 						c.ii = sum(cube[[1]]^2)
 						s.ii = sum(star[[1]]^2)
@@ -1711,7 +1808,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 																	as.numeric('{{selected.alpha | safe}}') 
 															{{/if}}
 													  {{/if}},
-													  
+										
 										{{if(options.selected.randomseeds !== "")}} 
 										seed= {{selected.randomseeds | safe}},
 										{{/if}}
@@ -1811,8 +1908,8 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 					style: "ml-5",
                 })
             },            
-            alphalbl: { el: new labelVar(config, { label: localization.en.alphalbl, style: "mt-3 ml-5",h: 4 }) },
-            lbl1: { el: new labelVar(config, { label: localization.en.lbl1, style: "mt-3", h: 6 }) },
+            alphalbl: { el: new labelVar(config, { label: localization.en.alphalbl, style: "mt-3 ml-5",h: 6 }) },
+            lbl1: { el: new labelVar(config, { label: localization.en.lbl1, style: "mt-3",h: 6 }) },
 
             randomizationChk: { 
 				el: new checkbox(config, { 
