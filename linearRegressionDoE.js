@@ -81,6 +81,12 @@ require(textutils)
 require(DoE.base)
 require(DoE.wrapper)
 require(FrF2)
+require(dplyr)
+require(ggplot2)
+require(ggthemes)
+require(qqplotr)
+require(nortest)
+require(rsm)
 
 					# 1. Identify CENTER points
 					bsky_identify_center_points <- function(design, tol = 1e-8) {
