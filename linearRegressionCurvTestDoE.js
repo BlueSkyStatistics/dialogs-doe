@@ -826,7 +826,7 @@ require(car)
 					bsky_design_{{dataset.name}}_factorial_rows =bsky_design_{{dataset.name}}_factorial_rows[bsky_identify_factorial_points({{dataset.name}}, tol = 1e-8), , drop = FALSE]
 					cat("Creating the linear model {{selected.modelname | safe}}_{{dataset.name}}", "only with the cube/factorial rows after removing the center points and axial points, if any\n")
 					
-					if(length(bsky_center_points_rowID) > 0) bsky_DesignHasCenterpoints = TRUE
+					if(nrow({{dataset.name}}) > nrow(bsky_design_{{dataset.name}}_factorial_rows)) bsky_DesignHasCenterpoints = TRUE
 				} else{
 					cat("{{dataset.name}} not a design data type. No center point can be detected and no curvature test can be performed\n") 
 					cat("Creating the linear model {{selected.modelname | safe}}_{{dataset.name}}", "with the entire dataset {{dataset.name}}\n")
@@ -904,6 +904,11 @@ require(car)
 				
 				#Adding attributes to support 
 				#{{selected.modelname | safe}}_{{dataset.name}}$call$data <- as.name("{{dataset.name}}")
+				
+				
+				if(bsky_DesignHasCenterpoints == FALSE){
+					{{selected.modelname | safe}}_{{dataset.name}}$call$data = as.name('{{dataset.name}}')
+				}
 				
 				#We don't add dependent and independent variables as this is handled by our functions
 				attr(.GlobalEnv\${{selected.modelname | safe}}_{{dataset.name}},"classDepVar")= class({{dataset.name}}[, c("{{selected.dependent | safe}}")])
