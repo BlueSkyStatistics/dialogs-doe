@@ -126,6 +126,12 @@ require(DoE.base)
  require(DoE.wrapper)
 require(FrF2)
 require(car)
+require(dplyr)
+require(ggplot2)
+require(ggthemes)
+require(qqplotr)
+require(nortest)
+require(rsm)
 #require(BsMD)
 
 					# 1. Identify CENTER points
