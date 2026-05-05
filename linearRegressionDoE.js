@@ -628,7 +628,7 @@ require(rsm)
                     required: true,
                     type: "character",
                     extraction: "TextAsIs",
-                    value: "DoE_AdvLinearModel1",
+                    value: "DoE_AdvLm1",
                     overwrite: "dataset"
                 })
             },

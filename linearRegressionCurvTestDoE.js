@@ -1186,7 +1186,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                     required: true,
                     type: "character",
                     extraction: "TextAsIs",
-                    value: "DoE_LinearModel1",
+                    value: "DoE_Lm1",
                     overwrite: "dataset"
                 })
             },
