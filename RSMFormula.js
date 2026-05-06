@@ -51,11 +51,17 @@ bsky_get_numeric_predictors <- function(model, data) {
   macro_terms <- term_labels[grepl(macro_pattern, term_labels)]
 
   # ── Block ID heuristic helper ────────────────────────────────────────────
+  # Handles numeric, integer, factor, AND character stored block columns.
+  # A block ID column is one whose unique values, when converted to numeric,
+  # form a consecutive integer sequence starting at 1 (e.g. 1,2,3 or "1","2","3").
   bsky_is_block_col <- function(col) {
-    if (!is.numeric(col) && !is.integer(col)) return(FALSE)
-    uvals <- sort(unique(col[!is.na(col)]))
+    cv_num <- suppressWarnings(as.numeric(as.character(col)))
+    if (any(is.na(cv_num))) return(FALSE)   # non-numeric levels like "Left","Right"
+    uvals <- sort(unique(cv_num[!is.na(cv_num)]))
     n <- length(uvals)
-    n <= 20 && all(col == floor(col), na.rm = TRUE) && all(uvals == seq_len(n))
+    n >= 2 && n <= 20 &&
+      all(cv_num == floor(cv_num), na.rm = TRUE) &&
+      all(uvals == seq_len(n))
   }
 
   # ── Collect macro vars (always, even in mixed formulas) ──────────────────
@@ -101,16 +107,23 @@ bsky_get_numeric_predictors <- function(model, data) {
 
 
 # ── Helper: compute PRESS (leave-one-out prediction error sum of squares) ──
+# Returns NA with a warning for fully saturated models (hat values == 1)
+# to avoid division by zero.
 bsky_rsm_press <- function(model) {
-  h  <- hatvalues(model)
-  r  <- residuals(model)
+  h <- hatvalues(model)
+  r <- residuals(model)
+  if (any(h >= 1 - 1e-10)) {
+    warning("PRESS statistic undefined: model is fully saturated (hat values = 1 for some observations). Returning NA.")
+    return(NA_real_)
+  }
   sum((r / (1 - h))^2)
 }
 
 # ── Helper: compute R-squared predicted from PRESS ──
 bsky_rsm_r2pred <- function(model) {
   press <- bsky_rsm_press(model)
-  sst   <- sum((model$model[[1]] - mean(model$model[[1]]))^2)
+  if (is.na(press)) return(NA_real_)
+  sst <- sum((model$model[[1]] - mean(model$model[[1]]))^2)
   1 - press / sst
 }
 
@@ -529,8 +542,14 @@ for (.ct in .bsky_covariate_terms) {
   }
 }
 
-if (length(.bsky_block_terms) > 0)
-  cat("Block/structural terms (forced into model):", paste(.bsky_block_terms, collapse=", "), "\n")
+if (length(.bsky_block_terms) > 0) {
+  cat("Block/structural terms (forced into model at every stepwise step):", paste(.bsky_block_terms, collapse=", "), "\n")
+} else {
+  cat("NOTE: No block term detected in formula.\n")
+  cat("If your design is blocked, you may add the block column BEFORE the RSM macro:\n")
+  cat("e.g., Blocks + SO(Temp, Pressure, Thinner)\n")
+  cat("or    Block.ccd + FO(Temp, Pressure) + PQ(Temp, Pressure) + TWI(Temp, Pressure)\n\n")
+}
 if (length(.bsky_categ_terms) > 0)
   cat("Categorical covariates (stepwise candidates):", paste(.bsky_categ_terms, collapse=", "), "\n")
 cat("\n")
@@ -547,7 +566,7 @@ if (!.bsky_has_macros) {
   cat("      The model has been automatically refit using RSM macros:\n")
   cat("      Main effects => FO(), I(x^2) quadratic terms => PQ(), x:y interactions => TWI()\n")
   cat("     This ensures all RSM outputs (canonical analysis, steepest ascent, contour plots are available. Coefficient estimates are identical)\n")
-  cat("      Otherwise, lm() model will be used that cannot support important RSM specific anaysis/outputs mentioned above.\n\n")
+  cat("     Otherwise, lm() model will be used that cannot support important RSM specific anaysis/outputs mentioned above.\n\n")
 
   #BSkyFormat(" ")
 }
@@ -1651,7 +1670,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 		attr({{selected.modelname | safe}}, "depVar") <- bsky_dep_var_name
 		
     # Re-assign model with attributes back to .GlobalEnv
-    assign("{{selected.modelname | safe}}", {{selected.modelname | safe}}, envir = .GlobalEnv)
+    assign("{{selected.modelname | safe}}_{{dataset.name}}", {{selected.modelname | safe}}, envir = .GlobalEnv)
 
     # ── Create expanded lm companion model ───────────────────────────────────
     # If the final model uses RSM macros (FO, SO, TWI, PQ etc.), create a
@@ -1675,13 +1694,51 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
           # We rebuild the lm directly with an explicit formula string and the
           # real dataset name so that $call is fully self-contained and
           # downstream tools (formula(), predict(), anova() etc.) work correctly.
-          .bsky_expanded_tlabs <- attr(
+          # Get expanded numeric RSM terms (macros expanded to individual terms,
+          # block/covariate columns stripped — this is correct for numeric terms only)
+          .bsky_expanded_numeric_tlabs <- attr(
             terms(bsky_rsm_to_lm({{selected.modelname | safe}}, {{dataset.name}})),
             "term.labels"
           )
+
+          # Get covariate terms (block IDs, categorical cols) from the final model.
+          # IMPORTANT: for an rsm object, attr(terms(model), "term.labels") returns
+          # macro group strings like "FO(Temp, Pressure,...)" — NOT individual variable
+          # names — so Block.ccd is never found as a standalone term using that approach.
+          # Instead, use all.vars(formula(model)) which recursively unpacks ALL variable
+          # names from the formula regardless of whether they are inside macros or plain
+          # terms, then filter to keep only those that are covariates (not numeric RSM
+          # predictors) using the block ID heuristic.
+          .bsky_final_all_vars <- setdiff(
+            all.vars(formula({{selected.modelname | safe}})),
+            "{{selected.dependent | safe}}"
+          )
+          .bsky_companion_covariate_tlabs <- .bsky_final_all_vars[
+            sapply(.bsky_final_all_vars, function(.v) {
+              if (!.v %in% names({{dataset.name}}))         return(FALSE)
+              if (.v %in% bsky_numeric_model_predictors)    return(FALSE)
+              .col <- {{dataset.name}}[[.v]]
+              if (is.factor(.col) || is.character(.col))    return(TRUE)
+              if (is.numeric(.col) || is.integer(.col)) {
+                .uv <- sort(unique(.col[!is.na(.col)]))
+                .n  <- length(.uv)
+                return(.n <= 20 && all(.col == floor(.col), na.rm = TRUE) &&
+                       all(.uv == seq_len(.n)))
+              }
+              FALSE
+            })
+          ]
+
+          # Companion formula: covariate terms first (Block.ccd, Paintbox etc.)
+          # then expanded numeric RSM terms — preserving the standard convention
+          # of covariates before predictors.
+          .bsky_companion_all_tlabs <- unique(c(
+            .bsky_companion_covariate_tlabs,
+            .bsky_expanded_numeric_tlabs
+          ))
           .bsky_companion_fmla <- as.formula(paste(
             "{{selected.dependent | safe}} ~",
-            paste(.bsky_expanded_tlabs, collapse = " + ")
+            paste(.bsky_companion_all_tlabs, collapse = " + ")
           ))
           # Refit with explicit formula and real dataset name so $call stores both
           .bsky_companion_call <- call("lm",
@@ -1695,11 +1752,103 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
           attr(.bsky_lm_companion, "classDepVar") <- class({{dataset.name}}[[bsky_dep_var_name]])
           attr(.bsky_lm_companion, "indepVars")   <- bsky_indep_in_data
           attr(.bsky_lm_companion, "depVar")      <- bsky_dep_var_name
-          assign("{{selected.modelname | safe}}_lm", .bsky_lm_companion, envir = .GlobalEnv)
+          assign("{{selected.modelname | safe}}_lm_{{dataset.name}}", .bsky_lm_companion, envir = .GlobalEnv)
 		  
-		  cat("NOTE: A companion lm model '{{selected.modelname | safe}}_lm' has been created in addition to the rsm model '{{selected.modelname | safe}}' ")
-		  cat("with all RSM macros (i.e., FO, TWI, PQ, SO) expanded to individual terms. ")
-		  cat("Use '{{selected.modelname | safe}}_lm' model for standard lm-based diagnostics and predictions using analysis menus under MODEL EVALUATION on the top menu bar.\n")
+		  cat("NOTE: A companion linear i.e., lm model '{{selected.modelname | safe}}_lm_{{dataset.name}}' has been created in addition to the rsm model '{{selected.modelname | safe}}_{{dataset.name}}' ")
+		  cat("with all RSM macros (i.e., FO, TWI, PQ, SO) expanded to individual terms.\n")
+		  cat("Use '{{selected.modelname | safe}}_lm_{{dataset.name}}' model for standard lm-based diagnostics and predictions using analysis menus under MODEL EVALUATION on the top menu bar.\n")
+
+          # ── Create optimization-ready companion lm (block terms absorbed) ────
+          # Only created when the user checks the option AND block terms exist.
+          # Block/structural terms (Block.ccd etc.) are NOT controllable factors
+          # and must not be free variables in optim(). The standard practice is
+          # to absorb their contribution into the intercept at a representative
+          # block level (most frequent block = typical production conditions),
+          # giving a block-free model whose intercept correctly reflects the
+          # average operating condition.
+        
+		  {{if(options.selected.createOptimLmChk == "TRUE")}}
+			  if( length(.bsky_block_terms) > 0) {
+					# Representative block level: most frequent value in the dataset
+					# (reflects typical / production-run conditions)
+					.bsky_optim_block_level <- as.numeric(names(which.max(
+					  table({{dataset.name}}[[.bsky_block_terms[1]]])
+					)))
+					cat(sprintf(
+					  "\nBuilding optimization-ready companion lm: block fixed at level %g (most frequent).\n",
+					  .bsky_optim_block_level
+					))
+
+					# Numeric terms only — drop all block/structural terms from formula
+					.bsky_optim_numeric_tlabs <- .bsky_companion_all_tlabs[
+					  !.bsky_companion_all_tlabs %in% .bsky_block_terms
+					]
+
+					# Also drop any remaining categorical covariates that were in the
+					# companion formula — optimization should be over pure numeric space.
+					.bsky_optim_numeric_tlabs <- .bsky_optim_numeric_tlabs[
+					  !.bsky_optim_numeric_tlabs %in% .bsky_categ_terms
+					]
+
+					if (length(.bsky_optim_numeric_tlabs) == 0) {
+					  cat("NOTE: No numeric RSM terms remain after removing block/covariate terms.\n")
+					  cat("      Optimization-ready companion model will not be created.\n")
+					} else {
+
+					  # Build the block-free formula
+					  .bsky_optim_fmla <- as.formula(paste(
+						"{{selected.dependent | safe}} ~",
+						paste(.bsky_optim_numeric_tlabs, collapse = " + ")
+					  ))
+
+					  # Fit on original data — we will adjust the intercept afterwards
+					  .bsky_optim_call <- call("lm",
+						formula   = .bsky_optim_fmla,
+						na.action = quote(na.exclude)
+					  )
+					  .bsky_optim_call[["data"]] <- as.name("{{dataset.name}}")
+					  .bsky_lm_optim <- eval(.bsky_optim_call, envir = .GlobalEnv)
+
+					  # Absorb block contribution into the intercept.
+					  # For each block term: contribution = coef(rsm_model)[block_term] * block_level
+					  # This ensures predict(.bsky_lm_optim, newdata) gives the same
+					  # predicted Y as predict(rsm_model, newdata with block fixed)
+					  # at the representative block level.
+					  .bsky_block_contribution <- 0
+					  for (.bv in .bsky_block_terms) {
+							.bv_coef <- coef({{selected.modelname | safe}})[.bv]
+							if (!is.na(.bv_coef)) {
+							  .bsky_block_contribution <- .bsky_block_contribution +
+								.bv_coef * .bsky_optim_block_level
+							}
+					  }
+					  .bsky_lm_optim$coefficients["(Intercept)"] <-
+						.bsky_lm_optim$coefficients["(Intercept)"] + .bsky_block_contribution
+
+					  # Store BSky metadata attributes
+					  attr(.bsky_lm_optim, "classDepVar") <- class({{dataset.name}}[[bsky_dep_var_name]])
+					  attr(.bsky_lm_optim, "indepVars")   <- .bsky_optim_numeric_tlabs[
+									!grepl(":", .bsky_optim_numeric_tlabs, fixed = TRUE) &
+									!grepl("^I\\\\(", .bsky_optim_numeric_tlabs)
+								]
+					  attr(.bsky_lm_optim, "depVar")      <- bsky_dep_var_name
+					  assign("{{selected.modelname | safe}}_lm_optim_{{dataset.name}}",
+							 .bsky_lm_optim, envir = .GlobalEnv)
+
+					  cat("\nNOTE: An optimization-ready companion lm model has been created:\n")
+					  cat("'{{selected.modelname | safe}}_lm_optim_{{dataset.name}}'\n")
+					  cat("Block terms absorbed into intercept at level:", .bsky_optim_block_level, "\n")
+					  cat("Numeric predictors:", paste(bsky_numeric_model_predictors, collapse = ", "), "\n")
+					  cat("Use this model with Response Optimization menus under MODEL EVALUATION > Response Optimizer.\n")
+					  cat("DO NOT use for diagnostics (predict, add statistics, etc under MODEL EVALUATION) or inference (use _lm_ model instead).\n\n")
+					}
+			  } else {
+				# No block terms — the existing _lm_ companion is already optimization-ready
+				cat("\nNOTE: No block terms detected in the model.\n")
+				cat("The companion lm model '{{selected.modelname | safe}}_lm_{{dataset.name}}'\n")
+				cat("is already suitable for use with Response Optimization menus (MODEL EVALUATION > Response Optimizer) and for diagnostics (predict, add statistics, etc under MODEL EVALUATION) or inference .\n\n")
+			  }
+		 {{/if}}
     }
 
 	}, error = function(e) {
@@ -1707,9 +1856,123 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 	})
 
 	
+	# ════════════════════════════════════════════════════════════════════
+	# STEP 4 — Observation Diagnostics
+	# ════════════════════════════════════════════════════════════════════
+	{{if(options.selected.observationDiagnosticsChk === "TRUE")}}
+		# Observation diagnostics table — uses the final RSM model
+		# (full or reduced after stepwise) which includes block and all terms.
+		tryCatch({
+		  bsky_rsm_p <- length(coef({{selected.modelname | safe}}))
+		  bsky_rsm_n <- nrow({{selected.modelname | safe}}$model)
+		  bsky_rsm_dffits_threshold <- 2 * sqrt(bsky_rsm_p / bsky_rsm_n)
+
+		  bsky_rsm_diag_df <- data.frame(
+		    Obs       = seq_len(bsky_rsm_n),
+		    Fitted    = round(fitted({{selected.modelname | safe}}),    BSkyGetDecimalDigitSetting()),
+		    Residual  = round(residuals({{selected.modelname | safe}}), BSkyGetDecimalDigitSetting()),
+		    Std.Resid = round(rstandard({{selected.modelname | safe}}), BSkyGetDecimalDigitSetting()),
+		    HI        = round(hatvalues({{selected.modelname | safe}}), BSkyGetDecimalDigitSetting()),
+		    Cooks.D   = round(cooks.distance({{selected.modelname | safe}}), BSkyGetDecimalDigitSetting()),
+		    DFFITS    = round(dffits({{selected.modelname | safe}}),    BSkyGetDecimalDigitSetting())
+		  )
+
+		  bsky_rsm_diag_df$Unusual <- ifelse(
+		    abs(bsky_rsm_diag_df$Std.Resid) > 2 & bsky_rsm_diag_df$Cooks.D > 1, "RC",
+		    ifelse(abs(bsky_rsm_diag_df$Std.Resid) > 2,                           "R",
+		    ifelse(bsky_rsm_diag_df$HI > 2 * mean(bsky_rsm_diag_df$HI),           "X",
+		    ifelse(bsky_rsm_diag_df$Cooks.D > 1,                                  "C",
+		    ifelse(abs(bsky_rsm_diag_df$DFFITS) > bsky_rsm_dffits_threshold,      "D", "")))))
+
+		  BSkyFormat(bsky_rsm_diag_df, singleTableOutputHeader = "Observation Diagnostics")
+
+		  cat("Unusual observation flags:\n",
+		      "  R  = |Std. Residual| > 2 (large residual)\n",
+		      "  X  = Leverage > 2 * mean leverage (high influence point)\n",
+		      "  C  = Cook\'s D > 1 (highly influential observation)\n",
+		      "  D  = |DFFITS| > 2*sqrt(p/n) =", round(bsky_rsm_dffits_threshold, 3), "\n",
+		      "  RC = both large residual AND highly influential\n")
+
+		  if (length(unique(round(bsky_rsm_diag_df$HI, 8))) == 1)
+		    cat("Note: All leverage values equal (", round(bsky_rsm_diag_df$HI[1], 4),
+		        ") - expected for a balanced CCD with a near-saturated model.\n")
+
+		  rm(bsky_rsm_p, bsky_rsm_n, bsky_rsm_dffits_threshold, bsky_rsm_diag_df)
+
+		}, error = function(e) {
+		  cat("Observation diagnostics could not be computed:", conditionMessage(e), "\n")
+		})
+	{{/if}}
+
+	# ════════════════════════════════════════════════════════════════════
+	# STEP 5 — Variance Inflation Factors (main effects model)
+	# ════════════════════════════════════════════════════════════════════
+	{{if(options.selected.VIFChk === "TRUE")}}
+		# VIF computed on main effects only model — standard Minitab/JMP convention.
+		# Interaction and quadratic terms are excluded to avoid artificial inflation.
+		# Block terms are included since they are part of the analysis model.
+		tryCatch({
+		  bsky_rsm_vif_terms <- unique(c(bsky_numeric_model_predictors, .bsky_block_terms))
+		  if (length(bsky_rsm_vif_terms) < 2) {
+		    cat("VIF requires at least 2 predictors. Skipping.\n")
+		  } else {
+		    bsky_rsm_vif_formula <- as.formula(
+		      paste("{{selected.dependent | safe}} ~", paste(bsky_rsm_vif_terms, collapse = " + "))
+		    )
+		    bsky_rsm_vif_model <- lm(bsky_rsm_vif_formula,
+		                              data      = {{dataset.name}},
+		                              na.action = na.exclude)
+		    bsky_rsm_vif_result <- car::vif(bsky_rsm_vif_model)
+
+		    # car::vif returns a simple named numeric vector for main-effects-only models
+		    bsky_rsm_vif_df <- data.frame(
+		      Term = names(bsky_rsm_vif_result),
+		      VIF  = round(as.numeric(bsky_rsm_vif_result), BSkyGetDecimalDigitSetting()),
+		      Flag = ifelse(as.numeric(bsky_rsm_vif_result) > 4,  "HIGH",
+		             ifelse(as.numeric(bsky_rsm_vif_result) > 2,  "MODERATE", ""))
+		    )
+		    BSkyFormat(bsky_rsm_vif_df,
+		               singleTableOutputHeader = "Variance Inflation Factors (Main Effects)")
+		    cat("Note: VIF computed on main effects model (Minitab/JMP convention).\n",
+		        "      VIF = 1.0 : no collinearity - predictor is orthogonal to all others.\n",
+		        "      VIF > 2   : MODERATE - worth investigating.\n",
+		        "      VIF > 4   : HIGH - collinearity is problematic.\n",
+		        "      VIF > 10  : SEVERE - coefficient estimates are unreliable.\n",
+		        "      For a balanced CCD, all VIF values should be close to 1.0.\n")
+		    rm(bsky_rsm_vif_formula, bsky_rsm_vif_model, bsky_rsm_vif_result, bsky_rsm_vif_df)
+		  }
+		}, error = function(e) {
+		  cat("VIF could not be computed:", conditionMessage(e), "\n")
+		})
+	{{/if}}
+
 	#Clean up
-	if(!is.null({{selected.modelname | safe}}_full)) rm({{selected.modelname | safe}}_full)
-	if(exists("convert_lm_type", env = .GlobalEnv) && !is.null(convert_lm_type)) rm(convert_lm_type, env = .GlobalEnv)
+	
+	# Models
+	if(exists("{{selected.modelname | safe}}_full")) rm({{selected.modelname | safe}}_full)
+	if(exists("{{selected.modelname | safe}}")) rm({{selected.modelname | safe}})
+	if(exists("{{selected.modelname | safe}}_lm")) rm({{selected.modelname | safe}}_lm)
+	if(exists("{{selected.modelname | safe}}_lm_optim")) rm({{selected.modelname | safe}}_lm_optim)
+	if(exists("convert_lm_type", envir = .GlobalEnv)) rm(convert_lm_type, envir = .GlobalEnv)
+	
+    # Other items
+	if(exists("BSky_RSM_Summary_{{selected.modelname | safe}}")) rm(BSky_RSM_Summary_{{selected.modelname | safe}})
+	bsky_rsm_cleanup_vars <- c(
+	  ".bsky_initial_full", ".bsky_num_vars", ".bsky_full_tlabs_raw",
+	  ".bsky_covariate_terms", ".bsky_block_term", ".bsky_block_terms",
+	  ".bsky_categ_terms", ".bsky_full_lm_ref", ".bsky_full_tlabs",
+	  ".bsky_orig_formula_str", ".bsky_has_macros",
+	  ".bsky_final_formula_str", ".bsky_final_has_macros",
+	  ".bsky_expanded_numeric_tlabs", ".bsky_final_all_vars",
+  ".bsky_companion_covariate_tlabs", ".bsky_companion_all_tlabs",
+  ".bsky_companion_fmla", ".bsky_companion_call", ".bsky_lm_companion",
+	  ".bsky_optim_numeric_tlabs", ".bsky_optim_fmla", ".bsky_optim_call",
+	  ".bsky_lm_optim", ".bsky_optim_block_level", ".bsky_block_contribution", ".bv",
+	  "bsky_resids"
+	)
+	for (.bsky_v in bsky_rsm_cleanup_vars)
+	  if (exists(.bsky_v, envir = .GlobalEnv)) rm(list = .bsky_v, envir = .GlobalEnv)
+	rm(bsky_rsm_cleanup_vars, .bsky_v)
 	
 
 \t
@@ -1725,7 +1988,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     required: true,
                     type: "character",
                     extraction: "TextAsIs",
-                    value: "ResponseSurfaceModel1",
+                    value: "Rsm1",
                     overwrite: "dataset"
                 })
             },
@@ -1816,6 +2079,19 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     //state: "unchecked",
                 })
             },
+            createOptimLmChk: {
+                el: new checkbox(config, {
+                    label: RSMFormula.t('createOptimLmChk'),
+                    no: "createOptimLmChk",
+                    bs_type: "valuebox",
+                    style: "mt-2 mb-2",
+                    extraction: "BooleanValue",
+                    true_value: "TRUE",
+                    false_value: "FALSE",
+                    newline: true,
+                    //state: "checked",
+                })
+            },
 			checkShapiroNormalityTestChk: {
                 el: new checkbox(config, {
                     label: RSMFormula.t('checkShapiroNormalityTestChk'), 
@@ -1881,6 +2157,30 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 					newline: true,
                 })
             },
+			observationDiagnosticsChk: {
+                el: new checkbox(config, {
+                    label: RSMFormula.t('observationDiagnosticsChk'),
+					no: "observationDiagnosticsChk",
+                    bs_type: "valuebox",
+                    extraction: "BooleanValue",
+                    true_value: "TRUE",
+                    false_value: "FALSE",
+					style: "mt-2",
+					newline: true,
+                })
+            },
+			VIFChk: {
+                el: new checkbox(config, {
+                    label: RSMFormula.t('VIFChk'),
+					no: "VIFChk",
+                    bs_type: "valuebox",
+                    extraction: "BooleanValue",
+                    true_value: "TRUE",
+                    false_value: "FALSE",
+					style: "mt-1",
+					newline: true,
+                })
+            },
             stepwiseSectionLbl: {
                 el: new labelVar(config, {
                     label: RSMFormula.t('stepwiseSectionLbl'),
@@ -1898,7 +2198,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     true_value: "TRUE",
                     false_value: "FALSE",
                     newline: true,
-                    state: "unchecked",
+                    //state: "checked",
                 })
             },
             stepwiseMethod: {
@@ -1968,7 +2268,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     true_value: "TRUE",
                     false_value: "FALSE",
                     newline: true,
-                    state: "unchecked",
+                    state: "checked",
                 })
             },
             stepwiseNote: {
@@ -2007,6 +2307,9 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 					objects.checkShapiroNormalityTestChk.el.content, 
 					objects.flipaxisPPplotChk.el.content, 
 					objects.deGroupPlotsChk.el.content, 
+					objects.observationDiagnosticsChk.el.content,
+					objects.VIFChk.el.content,
+					objects.createOptimLmChk.el.content,
 				],
 				
             nav: {
