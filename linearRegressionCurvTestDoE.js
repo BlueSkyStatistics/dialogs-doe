@@ -680,9 +680,53 @@ require(rsm)
 					} else {
 						"factorial"
 					}
-			   }
 			   
-			   cat("Design type detected, if any: ", bsky_design_type_label, "\n")
+			   
+					cat("Design type detected, if any: ", bsky_design_type_label, "\n")
+			   
+					# -------------------------------
+					# Detect center points
+					# -------------------------------
+					bsky_center_points_rowID = bsky_identify_center_points({{dataset.name}}, tol = 1e-8)
+					bsky_axial_points_rowID  = bsky_identify_axial_points({{dataset.name}}, tol = 1e-8, repair = FALSE)
+
+					# ── Data type conversion for pure factorial designs (no center/axial) ──────
+					# DoE.base stores ALL factor levels as R factor columns — including numeric
+					# ones (Temp, Pressure etc. stored as factor('20','25')).
+					# When center or axial points exist the augmentation already forced numeric
+					# columns to their correct type. For a pure factorial we must convert here
+					# so lm(), MEPlot and other analyses see numeric predictors, not factors.
+					# Categorical factors (Left/Right, Top/Bottom) are left as factor.
+					
+					if (length(bsky_center_points_rowID) == 0 && length(bsky_axial_points_rowID) == 0) {
+							 bsky_data_type_converted = FALSE
+					
+							  cat("Pure factorial design detected (no center or axial points).\n")
+							  
+							  bsky_di_conv <- design.info({{dataset.name}})
+							  for (bsky_fname in names(bsky_di_conv$factor.names)) {
+									bsky_col <- {{dataset.name}}[[bsky_fname]]
+									if (is.factor(bsky_col)) {
+										  bsky_num_try <- suppressWarnings(
+											as.numeric(as.character(levels(bsky_col))))
+										  if (!any(is.na(bsky_num_try))) {
+											{{dataset.name}}[[bsky_fname]] <- as.numeric(as.character(bsky_col))
+											cat("  Converted:", bsky_fname, "-> numeric\n")
+											bsky_data_type_converted = TRUE
+										  }
+									}
+							  }
+							  
+							  if(bsky_data_type_converted) {
+								  cat("Updating the design dataset in the data grid after converting design factor columns to numeric type (where possible) required for the linear for analysis.\n")
+								  BSkyLoadRefresh('{{dataset.name}}')
+							  }
+							  
+							  rm(bsky_di_conv, bsky_fname, bsky_col, bsky_num_try, bsky_data_type_converted)
+							  # Re-detect center/axial on converted design (should still be 0)
+							  #bsky_center_points_rowID = bsky_identify_center_points({{dataset.name}}, tol = 1e-8)
+					}
+			   }
 
 				{{if(options.selected.blockID == "")}}
 					bsky_design_{{dataset.name}}_factorial_rows = {{dataset.name}}
@@ -706,6 +750,7 @@ require(rsm)
 				{{/if}}
 						
 				bsky_DesignHasCenterpoints = FALSE
+				
 				if(c("design") %in% class({{dataset.name}}))
 				{
 					{{if(options.selected.axialCenterPointRowsChk == "TRUE")}}
@@ -713,11 +758,7 @@ require(rsm)
 								{{dataset.name}}  = bsky_summarize_design_point_rows({{dataset.name}}, tol = 1e-8)	
 					{{/if}}
 					
-					# -------------------------------
-					# Detect center points
-					# -------------------------------
-					bsky_center_points_rowID = bsky_identify_center_points({{dataset.name}}, tol = 1e-8)
-					
+
 					if(length(bsky_center_points_rowID) <2) {
 						cat("Number of center points found: ", length(bsky_center_points_rowID), " - Minimum 2 cente points needed to perform curvature test\n")
 					} else {
@@ -977,18 +1018,79 @@ require(rsm)
 
 					# The following plots and analysis is only valid for 2-level Factor Design - e.g. pb, FrF2, Full Factorial, etc design type
 					
+					# ── Helper: detect categorical factors in the factorial dataset ─────────────
+					# Used to guard FrF2 functions that only work on pure numeric 2-level designs.
+					bsky_has_categorical_factors <- function(df) {
+					  di_chk <- if (inherits(df, 'design')) design.info(df) else NULL
+					  fn_list <- if (!is.null(di_chk)) names(di_chk$factor.names)
+					             else colnames(df)
+					  any(sapply(fn_list, function(fn) {
+					    col <- df[[fn]]
+					    if (!is.factor(col)) return(FALSE)
+					    any(is.na(suppressWarnings(as.numeric(as.character(levels(col))))))
+					  }))
+					}
+
 					{{if (options.selected.AliasChk == "TRUE" && options.selected.twoLevelDesignTypeChk =="TRUE")}}
-						BSkyFormat("Check for Aliases") 
-						#FrF2::aliases({{selected.modelname | safe}}_{{dataset.name}}, code={{selected.AliasCodedChk | safe}})
+						BSkyFormat("Check for Aliases")
 						
-						FrF2::aliases(bsky_temp_model_without_block, code={{selected.AliasCodedChk | safe}})
+						bsky_skip_frf2 <- FALSE
+						bsky_frf2_reason <- ""
+
+						if(FALSE){ # consoder using later - for now it is ok to perform this for a non design dataset
+							if (!inherits(bsky_design_{{dataset.name}}_factorial_rows, "design")) {
+							  bsky_skip_frf2 <- TRUE
+							  bsky_frf2_reason <- "dataset is not a DoE.base design object"
+							} else {
+							  bsky_di_frf2  <- design.info({{dataset.name}})
+							  bsky_n_levels <- sapply(bsky_di_frf2$factor.names, length)
+							  if (any(bsky_n_levels > 2)) {
+								bsky_skip_frf2 <- TRUE
+								bsky_frf2_reason <- paste("factor(s) with more than 2 levels:",
+								  paste(names(bsky_n_levels)[bsky_n_levels > 2], collapse = ", "))
+							  }
+							}
+						}
+						
+						if (bsky_skip_frf2) {
+							  cat("NOTE: Alias check skipped —", bsky_frf2_reason, "\n")
+						} else {
+							  FrF2::aliases(bsky_temp_model_without_block, code={{selected.AliasCodedChk | safe}})	
+						}
+						rm(bsky_skip_frf2, bsky_frf2_reason)
+							
 					{{/if}}
 					
 					{{if (options.selected.DanielplotChk == "TRUE" && options.selected.twoLevelDesignTypeChk =="TRUE")}}
 							BSkyFormat("Daniel Plot (plot of effects)")
-							#FrF2::DanielPlot({{selected.modelname | safe}}_{{dataset.name}}, code={{selected.DanielplotCodeChk | safe}}, alpha={{selected.DanielplotAlpha}}, half={{selected.DanielplotHalfChk | safe}})
+				
+							# Check conditions that actually break DanielPlot:
+							# 1. Any factor has more than 2 levels
+							# 2. Design attribute is missing (not a DoE.base design)
+							bsky_skip_daniel <- FALSE
+							bsky_daniel_reason <- ""
 							
-							FrF2::DanielPlot(bsky_temp_model_without_block, code={{selected.DanielplotCodeChk | safe}}, alpha={{selected.DanielplotAlpha}}, half={{selected.DanielplotHalfChk | safe}})
+							if(FALSE){ # consoder using later - for now it is ok to perform this for a non design dataset
+								if (!inherits(bsky_design_{{dataset.name}}_factorial_rows, "design")) {
+								  bsky_skip_daniel <- TRUE
+								  bsky_daniel_reason <- "dataset is not a DoE.base design object"
+								} else {
+								  bsky_di_daniel <-   design.info({{dataset.name}})  # design.info(bsky_design_{{dataset.name}}_factorial_rows)
+								  bsky_n_levels  <- sapply(bsky_di_daniel$factor.names, length)
+								  if (any(bsky_n_levels > 2)) {
+									bsky_skip_daniel <- TRUE
+									bsky_daniel_reason <- paste("factor(s) with more than 2 levels detected:",
+									  paste(names(bsky_n_levels)[bsky_n_levels > 2], collapse=", "))
+								  }
+								}
+							}
+
+							if (bsky_skip_daniel) {
+							  cat("NOTE: Daniel Plot skipped —", bsky_daniel_reason, "\n")
+							} else {
+							  FrF2::DanielPlot(bsky_temp_model_without_block, code={{selected.DanielplotCodeChk | safe}}, alpha={{selected.DanielplotAlpha}}, half={{selected.DanielplotHalfChk | safe}})
+							}
+							rm(bsky_skip_daniel, bsky_daniel_reason)
 					{{/if}}
 
 					{{if (options.selected.MEPlotChk == "TRUE" && options.selected.twoLevelDesignTypeChk =="TRUE")}}
@@ -1041,55 +1143,126 @@ require(rsm)
 
 						bsky_grand_mean <- mean(bsky_me_data[[bsky_me_resp]], na.rm = TRUE)
 
-						# Compute marginal mean at each factor level
+						# Compute marginal means — detect numeric vs categorical per factor
 						bsky_me_rows <- do.call(rbind, lapply(bsky_me_factors, function(fac) {
-						  vals <- sort(unique(bsky_me_data[[fac]]))
-						  means <- sapply(vals, function(v)
-						    mean(bsky_me_data[[bsky_me_resp]][bsky_me_data[[fac]] == v], na.rm = TRUE))
+						  col       <- bsky_me_data[[fac]]
+						  vals      <- sort(unique(col))
+						  char_vals <- as.character(vals)
+						  means     <- sapply(char_vals, function(v)
+						    mean(bsky_me_data[[bsky_me_resp]][as.character(col) == v], na.rm = TRUE))
+						  num_try   <- suppressWarnings(as.numeric(char_vals))
+						  is_cat    <- any(is.na(num_try))
 						  data.frame(
-						    Factor    = fac,
-						    Level     = as.character(vals),
-						    Level_num = as.numeric(as.character(vals)),
-						    MeanY     = means,
+						    Factor      = fac,
+						    Level       = char_vals,
+						    Level_num   = if (is_cat) seq_along(char_vals) else num_try,
+						    Level_label = char_vals,
+						    is_cat      = is_cat,
+						    MeanY       = means,
 						    stringsAsFactors = FALSE)
 						}))
-						# Preserve factor order matching independent variable list
 						bsky_me_rows$Factor <- factor(bsky_me_rows$Factor, levels = bsky_me_factors)
 
-						bsky_me_plot <- ggplot(bsky_me_rows, aes(x = Level_num, y = MeanY)) +
-						  geom_line(color = "steelblue", linewidth = 0.8) +
-						  geom_point(shape = 15, size = 3, color = "steelblue") +
-						  geom_hline(yintercept = bsky_grand_mean,
-						            color = "black", linewidth = 0.6) +
-						  facet_wrap(~ Factor, scales = "free_x", nrow = 1) +
-						  labs(
-						    title = paste("Main effects plot for", bsky_me_resp),
-						    x = NULL, y = bsky_me_resp) +
-						  {{selected.BSkyThemes | safe}} +
-						  theme(
-						    strip.text       = element_text(face = "bold"),
-						    plot.title       = element_text(face = "bold", hjust = 0.5),
-						    panel.spacing    = unit(0.3, "lines")
-						  )
+						# Split numeric and categorical factors for separate plots
+						bsky_num_factors <- bsky_me_factors[
+						  !bsky_me_rows$is_cat[match(bsky_me_factors, as.character(bsky_me_rows$Factor))]]
+						bsky_cat_factors <- bsky_me_factors[
+						   bsky_me_rows$is_cat[match(bsky_me_factors, as.character(bsky_me_rows$Factor))]]
 
-						# ── Add optional reference lines ─────────────────────────────────────
-						if (!is.null(bsky_me_ref_df)) {
-						  for (bsky_me_i in seq_len(nrow(bsky_me_ref_df))) {
-						    bsky_me_plot <- bsky_me_plot +
-						      geom_hline(
-						        yintercept = bsky_me_ref_df$y_val[bsky_me_i],
-						        color = "red", linetype = "dashed",
-						        linewidth = 0.5, alpha = 0.8) +
-						      annotate(
-						        geom = "text",
-						        x = Inf, y = bsky_me_ref_df$y_val[bsky_me_i],
-						        label = bsky_me_ref_df$label[bsky_me_i],
-						        color = "red", size = 2.8,
-						        hjust = 1.05, vjust = 0.5)
-						  }
+						# Shared y range so both sub-plots align on the same scale
+						bsky_me_y_pad  <- diff(range(bsky_me_rows$MeanY, na.rm = TRUE)) * 0.08
+						bsky_me_y_lims <- range(bsky_me_rows$MeanY, na.rm = TRUE) +
+						                  c(-bsky_me_y_pad, bsky_me_y_pad)
+
+						bsky_me_common_layers <- list(
+						  geom_hline(yintercept = bsky_grand_mean, color = "black", linewidth = 0.6),
+						  coord_cartesian(ylim = bsky_me_y_lims),
+						  labs(x = NULL),
+						  {{selected.BSkyThemes | safe}},
+						  theme(
+						    strip.text    = element_text(face = "bold"),
+						    plot.title    = element_text(face = "bold", hjust = 0.5),
+						    panel.spacing = unit(0.3, "lines")
+						  )
+						)
+
+						# Helper: append optional reference lines
+						bsky_me_add_refs <- function(p) {
+						  if (is.null(bsky_me_ref_df)) return(p)
+						  for (i in seq_len(nrow(bsky_me_ref_df)))
+						    p <- p +
+						      geom_hline(yintercept = bsky_me_ref_df$y_val[i],
+						                 color="red", linetype="dashed", linewidth=0.5, alpha=0.8) +
+						      annotate("text", x=Inf, y=bsky_me_ref_df$y_val[i],
+						               label=bsky_me_ref_df$label[i],
+						               color="red", size=2.8, hjust=1.05, vjust=0.5)
+						  p
 						}
 
-						print(bsky_me_plot)
+						# ── Plot 1: numeric factors ─────────────────────────────────────────────
+						bsky_me_plot_num <- NULL
+						if (length(bsky_num_factors) > 0) {
+						  bsky_me_rows_num <- bsky_me_rows[
+						    as.character(bsky_me_rows$Factor) %in% bsky_num_factors, ]
+						  bsky_me_rows_num$Factor <- factor(as.character(bsky_me_rows_num$Factor),
+						                                    levels = bsky_num_factors)
+						  bsky_me_plot_num <- ggplot(bsky_me_rows_num,
+						      aes(x = Level_num, y = MeanY)) +
+						    geom_line(color = "steelblue", linewidth = 0.8) +
+						    geom_point(shape = 15, size = 3, color = "steelblue") +
+						    facet_wrap(~ Factor, scales = "free_x", nrow = 1) +
+						    bsky_me_common_layers +
+						    labs(y = bsky_me_resp,
+						         title = if (length(bsky_cat_factors) == 0)
+						                   paste("Main effects plot for", bsky_me_resp) else NULL) +
+						    theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+						  bsky_me_plot_num <- bsky_me_add_refs(bsky_me_plot_num)
+						}
+
+						# ── Plot 2: categorical factors (discrete x, level names as ticks) ──────
+						bsky_me_plot_cat <- NULL
+						if (length(bsky_cat_factors) > 0) {
+						  bsky_me_rows_cat <- bsky_me_rows[
+						    as.character(bsky_me_rows$Factor) %in% bsky_cat_factors, ]
+						  bsky_me_rows_cat$Factor <- factor(as.character(bsky_me_rows_cat$Factor),
+						                                    levels = bsky_cat_factors)
+						  bsky_me_rows_cat$Level_cat <- factor(bsky_me_rows_cat$Level,
+						    levels = unique(bsky_me_rows_cat$Level[order(bsky_me_rows_cat$Level_num)]))
+						  bsky_me_plot_cat <- ggplot(bsky_me_rows_cat,
+						      aes(x = Level_cat, y = MeanY, group = 1)) +
+						    geom_line(color = "steelblue", linewidth = 0.8) +
+						    geom_point(shape = 15, size = 3, color = "steelblue") +
+						    facet_wrap(~ Factor, scales = "free_x", nrow = 1) +
+						    bsky_me_common_layers +
+						    labs(title = NULL, y = NULL) +
+						    theme(axis.text.y  = element_blank(),
+						          axis.ticks.y = element_blank(),
+						          axis.title.y = element_blank(),
+						          axis.text.x  = element_text(angle = 45, hjust = 1, vjust = 1))
+						  bsky_me_plot_cat <- bsky_me_add_refs(bsky_me_plot_cat)
+						}
+
+						# ── Combine and print ───────────────────────────────────────────────────
+						if (!is.null(bsky_me_plot_num) && !is.null(bsky_me_plot_cat)) {
+						  gridExtra::grid.arrange(
+						    gridExtra::arrangeGrob(
+						      bsky_me_plot_num, bsky_me_plot_cat,
+						      ncol   = 2,
+						      widths = unit(c(length(bsky_num_factors), length(bsky_cat_factors)), "null")
+						    ),
+						    top = grid::textGrob(
+						      paste("Main effects plot for", bsky_me_resp),
+						      gp = grid::gpar(fontsize = 14, fontface = "bold")
+						    )
+						  )
+						} else if (!is.null(bsky_me_plot_num)) {
+						  print(bsky_me_plot_num)
+						} else if (!is.null(bsky_me_plot_cat)) {
+						  print(bsky_me_plot_cat +
+						    labs(title = paste("Main effects plot for", bsky_me_resp), y = bsky_me_resp) +
+						    theme(axis.text.y = element_text(), axis.ticks.y = element_line(),
+						          plot.title  = element_text(face="bold", hjust=0.5, size=18)))
+						}
 
 						# Also show the marginal means matrix
 						# mainEffectsMatrixfromMEPlot = FrF2::MEPlot(bsky_temp_model_without_block)
@@ -1097,20 +1270,41 @@ require(rsm)
 						
 						# Compute marginal means matrix directly - same data already used for the ggplot
 						# Rows = factor levels (low/high), Columns = factors
-						mainEffectsMatrixfromMEPlot <- do.call(cbind, lapply(bsky_me_factors, function(fac) {
-						  vals <- sort(unique(bsky_me_data[[fac]]))
-						  means <- sapply(vals, function(v)
-							mean(bsky_me_data[[bsky_me_resp]][bsky_me_data[[fac]] == v], na.rm = TRUE))
-						  means
+						# Main effects matrix: per-factor means, rownames reflect actual levels
+						bsky_me_mat_list2 <- lapply(bsky_me_factors, function(fac) {
+						  col  <- bsky_me_data[[fac]]
+						  lvls <- sort(unique(col))
+						  means <- sapply(as.character(lvls), function(v)
+						    mean(bsky_me_data[[bsky_me_resp]][as.character(col) == v], na.rm = TRUE))
+						  is_cat2 <- any(is.na(suppressWarnings(as.numeric(as.character(lvls)))))
+						  list(means = means, labels = as.character(lvls), is_cat = is_cat2)
+						})
+						bsky_me_max_lev2 <- max(sapply(bsky_me_mat_list2, function(x) length(x$means)))
+						mainEffectsMatrixfromMEPlot <- do.call(cbind, lapply(bsky_me_mat_list2, function(x) {
+						  m <- x$means; length(m) <- bsky_me_max_lev2; m
 						}))
 						colnames(mainEffectsMatrixfromMEPlot) <- bsky_me_factors
-						rownames(mainEffectsMatrixfromMEPlot) <- c("low", "high")
+						bsky_me_ref_fac2 <- bsky_me_mat_list2[[
+						  which.max(sapply(bsky_me_mat_list2, function(x) length(x$means)))]]
+						rownames(mainEffectsMatrixfromMEPlot) <-
+						  if (bsky_me_ref_fac2$is_cat) {
+							  bsky_me_ref_fac2$labels
+						  } else if (bsky_me_max_lev2 == 2){
+							  c("low", "high")
+						  } else paste0("level", seq_len(bsky_me_max_lev2))
 						BSkyFormat(mainEffectsMatrixfromMEPlot, outputTableRenames = "Main Effects Matrix")
 
 						# Clean up
 						rm(bsky_me_data, bsky_me_resp, bsky_me_factors, bsky_grand_mean,
-						   bsky_me_rows, bsky_me_plot, bsky_me_ref_df,
-						   bsky_me_yIntercept, bsky_me_hRefLabels, mainEffectsMatrixfromMEPlot)
+						   bsky_me_rows, bsky_me_ref_df, bsky_me_y_lims, bsky_me_y_pad,
+						   bsky_me_common_layers, bsky_me_add_refs,
+						   bsky_num_factors, bsky_cat_factors,
+						   bsky_me_yIntercept, bsky_me_hRefLabels, mainEffectsMatrixfromMEPlot,
+						   bsky_me_mat_list2, bsky_me_max_lev2, bsky_me_ref_fac2)
+						if (exists("bsky_me_plot_num")) rm(bsky_me_plot_num)
+						if (exists("bsky_me_plot_cat")) rm(bsky_me_plot_cat)
+						if (exists("bsky_me_rows_num"))  rm(bsky_me_rows_num)
+						if (exists("bsky_me_rows_cat"))  rm(bsky_me_rows_cat)
 						if (exists("bsky_me_i")) rm(bsky_me_i)
 					{{/if}}
 
@@ -1148,14 +1342,14 @@ require(rsm)
 
 {{if(options.selected.showDesignWithoutCenterpointsChk === "TRUE" )}} 
    if(bsky_DesignHasCenterpoints == TRUE){
-	   cat("{{dataset.name}} - Design has centerpoints. bsky_design_{{dataset.name}}_factorial_rows is the dataset without the centerpoints is created in the data grid\n")
+	   cat("{{dataset.name}} - Design has center points. bsky_design_{{dataset.name}}_factorial_rows is the dataset with only factorial rows (i.e., without the center points and axial points, if any ) is created in the data grid\n")
 	   BSkyLoadRefresh('bsky_design_{{dataset.name}}_factorial_rows')
    } else {
 	   cat("{{dataset.name}} - Design does not have any centerpoints. Hence the design without centerpoint is not created in the data grid\n")
    }
 {{/if}}
 
-cat("\nLinear model {{selected.modelname | safe}}_{{dataset.name}} has been saved and can be used for further model analysis like predict, etc., for standard lm-based diagnostics and predictions using analysis menus under MODEL EVALUATION on the top menu bar.\n")
+cat("\nLinear model: \n{{selected.modelname | safe}}_{{dataset.name}} \nhas been saved and can be used for further model analysis like predict response, response optimization, etc., for standard lm-based diagnostics and predictions using analysis menus under MODEL EVALUATION on the top menu bar.\n")
 
 #clean up 
 if(exists('bsky_hvals'))       rm(bsky_hvals)

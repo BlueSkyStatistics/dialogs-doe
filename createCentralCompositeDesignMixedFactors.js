@@ -16,6 +16,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
             modalType: "two",
             RCode: `
             require(DoE.wrapper)
+			 require(DoE.base)
 		
 			bsky_extract_base_type <- function(type_string) {
 						  # Helper function to extract base design type
@@ -25,6 +26,287 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						  base <- trimws(base)
 						  return(base)
 			}
+			
+			\`%||%\` <- function(a, b) if (!is.null(a)) a else b
+
+			bsky_normalise_block_encoding <- function(design,
+                                           block_col     = NULL,
+                                           collapse_reps = FALSE,
+                                           verbose       = TRUE) {
+
+ 
+
+						  di <- design.info(design)
+
+						  # ── Step 1: resolve block column name ─────────────────────────────────────
+						  if (is.null(block_col)) {
+							if (!is.null(di$block.name) && di$block.name %in% colnames(design)) {
+							  block_col <- di$block.name
+							} else {
+							  factor_cols <- names(di$factor.names)
+							  for (cn in colnames(design)) {
+								if (cn %in% factor_cols) next
+								cv <- suppressWarnings(as.numeric(as.character(design[[cn]])))
+								if (any(is.na(cv))) next
+								uv <- sort(unique(cv))
+								if (length(uv) >= 2 && length(uv) <= 20) {
+								  block_col <- cn
+								  break
+								}
+							  }
+							}
+						  }
+
+						  if (is.null(block_col)) {
+							if (verbose) cat("NOTE: No block column detected. Design returned unchanged.\n")
+							return(design)
+						  }
+
+						  if (!block_col %in% colnames(design)) {
+							warning("Block column '", block_col, "' not found in design. Returned unchanged.")
+							return(design)
+						  }
+
+						  # ── Step 2: classify the block column ─────────────────────────────────────
+						  col_raw <- design[[block_col]]
+						  col_num <- suppressWarnings(as.numeric(as.character(col_raw)))
+
+						  if (any(is.na(col_num))) {
+							if (verbose)
+							  cat("NOTE: Block column '", block_col,
+								  "' has non-numeric values. No translation applied.\n", sep = "")
+							return(design)
+						  }
+
+						  dec_parts   <- round(col_num - floor(col_num), 8)
+						  has_decimal <- any(dec_parts > 0)
+
+						  if (!has_decimal) {
+							# Format A - already clean integers, no translation needed
+							if (verbose)
+							  cat("NOTE: Block column '", block_col,
+								  "' uses integer encoding (Format A: ",
+								  paste(sort(unique(col_num)), collapse = ", "),
+								  "). No translation needed.\n", sep = "")
+							return(design)
+						  }
+
+						  # ── Step 3: classify format and build translation map ─────────────────────
+						  int_parts     <- floor(col_num)
+						  unique_ints   <- sort(unique(int_parts))      # original block IDs
+						  unique_vals   <- sort(unique(col_num))         # all unique session values
+						  n_orig_blocks <- length(unique_ints)
+						  n_sessions    <- length(unique_vals)
+
+						  is_format_b <- (length(unique_ints) == 1L && unique_ints[1] == 0L)
+						  fmt_label   <- if (is_format_b)
+										   "Format B (replications only, no original block structure)"
+										 else
+										   "Format C (block + replication encoding)"
+
+						  if (collapse_reps && !is_format_b) {
+							# Format C, collapse=TRUE: integer part -> physical block ID
+							orig_to_new   <- setNames(seq_along(unique_ints), as.character(unique_ints))
+							new_block_ids <- as.integer(orig_to_new[as.character(int_parts)])
+							n_new_blocks  <- n_orig_blocks
+							reps_per_block <- n_sessions / n_orig_blocks
+							id_map <- setNames(
+							  as.integer(orig_to_new[as.character(floor(unique_vals))]),
+							  as.character(unique_vals)
+							)
+							# collapse_map: new integer session block -> physical block (used when
+							# collapse_reps=FALSE was used for augmentation and we need to collapse after)
+							collapse_map <- NULL   # not needed here - already collapsed
+
+						  } else if (is_format_b && collapse_reps) {
+							# Format B, collapse=TRUE: all -> Block 1 (unblocked design)
+							new_block_ids <- rep(1L, length(col_num))
+							n_new_blocks  <- 1L
+							reps_per_block <- n_sessions
+							id_map <- setNames(rep(1L, n_sessions), as.character(unique_vals))
+							collapse_map <- NULL
+
+						  } else {
+							# collapse_reps=FALSE: each unique session -> own sequential integer block
+							id_map        <- setNames(seq_along(unique_vals), as.character(unique_vals))
+							new_block_ids <- as.integer(id_map[as.character(col_num)])
+							n_new_blocks  <- n_sessions
+							reps_per_block <- 1L
+
+							# collapse_map: maps each new sequential block ID to its physical block ID
+							# e.g. for Format C 2blocks x 3reps: 1->1, 2->1, 3->1, 4->2, 5->2, 6->2
+							# Used by bsky_collapse_to_physical_blocks() after augmentation
+							if (!is_format_b) {
+							  collapse_map <- setNames(
+								as.integer(seq_along(unique_ints)[
+								  match(as.character(floor(unique_vals)), as.character(unique_ints))
+								]),
+								as.character(seq_along(unique_vals))
+							  )
+							} else {
+							  # Format B collapse_reps=FALSE: all sessions map to block 1
+							  collapse_map <- setNames(rep(1L, n_sessions), as.character(seq_along(unique_vals)))
+							}
+						  }
+
+						  # ── Step 4: print translation table and model recommendation ──────────────
+						  if (verbose) {
+							cat("\n")
+							cat("Block column  : '", block_col, "'\n", sep = "")
+							cat("Encoding      : ", fmt_label, "\n", sep = "")
+							cat("Strategy      : ",
+								if (collapse_reps) "Collapse replications into physical blocks (analysis mode)"
+								else "Each session as its own block (augmentation mode)",
+								"\n", sep = "")
+							# Report replication structure when detected
+							if (!is_format_b && n_orig_blocks > 0 && reps_per_block > 1) {
+							  cat("Replications  : ", as.integer(reps_per_block),
+								  " per block x ", n_orig_blocks, " block(s) = ",
+								  n_sessions, " total sessions\n", sep = "")
+							} else if (is_format_b && n_sessions > 1) {
+							  cat("Replications  : ", n_sessions,
+								  " (no block structure - pure replications)\n", sep = "")
+							}
+							cat("\n")
+
+							cat("Translation table:\n")
+							cat(sprintf("  %-20s  ->  %s\n", "Original value(s)", "New Block ID"))
+							cat(sprintf("  %-20s      %s\n", "-------------------", "------------"))
+
+							if (collapse_reps && !is_format_b) {
+							  for (bid in unique_ints) {
+								sessions_in <- unique_vals[floor(unique_vals) == bid]
+								new_id <- id_map[[as.character(sessions_in[1])]]
+								cat(sprintf("  %-20s  ->  %d\n",
+									paste(as.character(sessions_in), collapse = ", "), new_id))
+							  }
+							} else if (is_format_b && collapse_reps) {
+							  cat(sprintf("  %-20s  ->  %d  (all reps - single block)\n",
+								  paste(as.character(unique_vals), collapse = ", "), 1L))
+							} else {
+							  for (i in seq_along(unique_vals))
+								cat(sprintf("  %-20s  ->  %d\n",
+									as.character(unique_vals[i]), as.integer(id_map[[i]])))
+							}
+
+							cat("\nColumn changes:\n")
+							cat("  '", block_col, "' overwritten in-place with integer Block IDs\n", sep = "")
+							cat("  '", block_col, ".orig' appended (original decimal values preserved)\n", sep = "")
+
+							cat("\nModel recommendation:\n")
+							if (collapse_reps && !is_format_b) {
+							  cat("  Include '", block_col, "' in your RSM model (represents ",
+								  n_new_blocks, " physical block(s)).\n", sep = "")
+							  cat("  Omit replication term - reps contribute directly to pure error.\n")
+							  cat("  Y ~ ", block_col, " + FO(...) + PQ(...) + TWI(...)\n", sep = "")
+							  cat("  Block df: ", n_new_blocks - 1L, "   Pure error df: n_corners x (",
+								  as.integer(reps_per_block), " reps - 1)\n", sep = "")
+							} else if (is_format_b && collapse_reps) {
+							  cat("  No block structure - omit block term entirely.\n")
+							  cat("  Y ~ FO(...) + PQ(...) + TWI(...)\n")
+							} else if (is_format_b && !collapse_reps) {
+							  # Format B, augmentation mode: 3 replications each as own session-block
+							  cat("  Replication-only design (", n_sessions, " sessions = ", n_sessions,
+								  " replications).\n", sep = "")
+							  cat("  After augmentation, choose one of:\n")
+							  cat("    (a) Sessions were identical conditions (pure replication):\n")
+							  cat("        Omit Block term - replications contribute to pure error.\n")
+							  cat("        Y ~ FO(...) + PQ(...) + TWI(...)\n")
+							  cat("    (b) Sessions may have drifted (different days/batches):\n")
+							  cat("        Include Block to absorb session-to-session variation.\n")
+							  cat("        Y ~ ", block_col, " + FO(...) + PQ(...) + TWI(...)\n", sep = "")
+							  cat("  NOTE: bsky_collapse_to_physical_blocks() not needed for Format B.\n")
+							} else {
+							  # Format C, augmentation mode: sessions as own blocks, collapse_map available
+							  cat("  Include '", block_col, "' in your RSM model (", n_new_blocks,
+								  " session blocks).\n", sep = "")
+							  cat("  Y ~ ", block_col, " + FO(...) + PQ(...) + TWI(...)\n", sep = "")
+							  if (!is.null(collapse_map) && n_orig_blocks < n_new_blocks)
+								cat("  TIP: After augmentation, call bsky_collapse_to_physical_blocks()\n",
+									"       to collapse to ", n_orig_blocks,
+									" physical block(s) for analysis (saves ",
+									n_new_blocks - 1L - (n_orig_blocks - 1L), " df).\n", sep = "")
+							}
+							cat("\n  NOTE: Use '", block_col,
+								".orig' to schedule runs - rows with the same\n", sep = "")
+							cat("  original value should be run in the same experimental session.\n\n")
+						  }
+
+						  # ── Step 5: apply column changes (direct assignment only) ─────────────────
+						  orig_col_name <- paste0(block_col, ".orig")
+						  design[[orig_col_name]] <- col_raw          # preserves original Factor type
+						  design[[block_col]]     <- new_block_ids    # clean integer IDs
+
+						  # ── Step 6: rebuild desnum ────────────────────────────────────────────────
+						  tryCatch({
+							factor_cols <- names(di$factor.names)
+							dm_cols <- colnames(design)[colnames(design) %in% c(block_col, factor_cols)]
+							if (length(dm_cols) > 0) {
+							  dm_fmla  <- as.formula(paste("~", paste(dm_cols, collapse = " + ")))
+							  dm_frame <- model.frame(dm_fmla, data = design, na.action = na.pass)
+							  dm <- model.matrix(dm_fmla, data = dm_frame)[, -1, drop = FALSE]
+							  attr(design, "desnum") <- dm
+							}
+						  }, error = function(e) {
+							attr(design, "desnum") <- NULL
+							if (verbose)
+							  message("NOTE: desnum cleared (", e$message,
+									  "). DoE.base will regenerate it automatically.")
+						  })
+
+						  # ── Step 7: update design.info - all five inter-related fields ─────────────
+						  # After translation the design is a straight blocked design with n_new_blocks
+						  # sequential integer blocks. Setting nruns=total and bbreps=1 means:
+						  #   - detection helpers see rep_scale=1 -> no per-rep division needed
+						  #   - bsky_ccd_augment_enhanced sees bbreps=1 -> no phantom star blocks
+						  #   - nruns==nrow(design) -> design.info<- setter validates without error
+						  total_rows    <- nrow(design)
+						  new_blocksize <- as.integer(round(total_rows / n_new_blocks))
+
+						  di$block.name <- block_col
+						  di$nblocks    <- n_new_blocks
+						  di$nruns      <- total_rows     # total rows - matches nrow(design)
+						  di$bbreps     <- 1L             # sessions now expressed as separate blocks
+						  di$wbreps     <- 1L
+						  di$blocksize  <- new_blocksize
+						  # Update ncube to total factorial rows so CCD summary reads correct count.
+						  # At normalise time no centers have been added yet, so ncube = nruns.
+						  # After augmentation, bsky_identify_axial_points repair will correct this
+						  # to the exact per-block-per-combo count if needed.
+						  if (!is.null(di$ncube)) {
+							# Was per-rep: multiply by original n_sessions to get total
+							# (safer than using nruns directly in case design has existing centers)
+							existing_centers_total <- if (!is.null(di$ncenter) && di$ncenter > 0)
+							  di$ncenter * max(1L, di$bbreps %||% 1L)
+							else 0L
+							di$ncube <- as.integer(total_rows - existing_centers_total)
+						  }
+
+						  di$bsky_block_translation <- list(
+							original_col   = orig_col_name,
+							new_col        = block_col,
+							format         = fmt_label,
+							collapse_reps  = collapse_reps,
+							n_orig_blocks  = n_orig_blocks,
+							n_new_blocks   = n_new_blocks,
+							reps_per_block = reps_per_block,
+							n_sessions     = n_sessions,
+							value_map      = id_map,
+							collapse_map   = collapse_map   # NULL when collapse_reps=TRUE (already collapsed)
+						  )
+						  design.info(design) <- di
+
+						  if (verbose) {
+							cat("Result: '", block_col, "' -> ", n_new_blocks, " integer block(s);",
+								" originals in '", orig_col_name, "'.\n", sep = "")
+							cat("design.info: nruns=", total_rows, ", nblocks=", n_new_blocks,
+								", blocksize=", new_blocksize, ", bbreps=1, wbreps=1\n\n", sep = "")
+						  }
+
+						  return(design)
+			}
+
+
 
 			bsky_ccd_augment_enhanced <- function(cube, ncenter = 4, columns = "all", 
 																				  block.name = "Block.ccd",
@@ -91,15 +373,23 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							stop("ncenter must be integer")
 							
 						  
+						  # ── Pre-process: normalise decimal block encoding ─────────────────────
+						  if (exists("bsky_normalise_block_encoding")) {
+						    cube <- bsky_normalise_block_encoding(cube, collapse_reps = FALSE, verbose = TRUE)
+						    di <- design.info(cube)
+						  }
 						  # -------------------------------------------------------
 						  # BLOCK NAME RESOLUTION
 						  # If the input design is already blocked, inherit its existing
 						  # block column name rather than using the UI default.
-						  # This prevents a second, differently-named block column appearing
-						  # alongside the original (e.g. user column "Blocks" vs UI "Block.ccd").
-						  # If the design is NOT blocked, use the name supplied by the user.
 						  # -------------------------------------------------------
 						  is_blocked_design <- length(grep("blocked", di$type)) > 0
+						  if (!is_blocked_design && !is.null(di$block.name) &&
+						      di$block.name %in% colnames(cube)) {
+						    .bv_chk <- suppressWarnings(as.integer(as.character(cube[[di$block.name]])))
+						    if (!any(is.na(.bv_chk)) && length(unique(.bv_chk)) >= 2L)
+						      is_blocked_design <- TRUE
+						  }
 						  if (is_blocked_design) {
 							existing_block_name <- NULL
 							# 1. Prefer di$block.name if it points to an actual column
@@ -136,7 +426,9 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							# Validate replications
 							if (!is.null(di$bbreps) && !is.null(di$wbreps)) {
 								if (di$bbreps * di$wbreps > 1)
-									stop("replicated blocked designs can not yet be treated with function ccd.augment")
+									stop(paste0(
+				  "Replicated blocked design (bbreps=", di$bbreps, ").\n",
+				  "Call bsky_normalise_block_encoding(cube, collapse_reps=FALSE) before augmenting."))
 							}
 						  }
 						  
@@ -181,6 +473,84 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						  # Check actual count, not just type string (type might be "ccd" without "center" in it)
 						  existing_center_count <- if (!is.null(di$ncenter)) di$ncenter else 0
 						  has_existing_centers <- existing_center_count > 0
+						  # Capture FACTORIAL row count now: after existing_center_count is known
+						  # but before any new rows are added. Subtracting existing centers gives
+						  # the true factorial count regardless of whether centers already exist.
+						  .bsky_n_original_rows <- nrow(cube) - existing_center_count
+
+						  # ── Helper: backfill Blocks.orig for newly added rows ─────────────
+						  # Rows added by augmentation (centers, axial) get NA in Blocks.orig
+						  # because they were not in the original design. This helper fills
+						  # those NAs using the reverse of the value_map so the experimenter
+						  # knows which session each new row belongs to for scheduling.
+						  bsky_backfill_blocks_orig <- function(df, tr, numeric_factors = NULL) {
+						    # Fills Blocks.orig for rows added by augmentation:
+						    #   - Center/factorial rows get their original session decimal (e.g. '1.1', '2.3')
+						    #     via the reverse of the value_map stored by bsky_normalise_block_encoding.
+						    #   - Star block rows have no original session — they are a new session.
+						    #     Axial points   -> 's.N'   (e.g. 's.1' for the first star block)
+						    #     Star centers   -> 's.c.N' (e.g. 's.c.1')
+						    #     where N = star block sequence number (relative to the original blocks).
+						    if (is.null(tr)) return(df)
+						    orig_col <- tr$original_col
+						    new_col  <- tr$new_col
+						    vmap     <- tr$value_map
+						    if (is.null(orig_col) || !orig_col %in% colnames(df)) return(df)
+						    if (is.null(new_col)  || !new_col  %in% colnames(df)) return(df)
+						    # Coerce to character to avoid factor level issues
+						    df[[orig_col]] <- as.character(df[[orig_col]])
+						    na_rows <- which(is.na(df[[orig_col]]))
+						    if (length(na_rows) == 0) return(df)
+						    # Reverse map: integer block ID -> original decimal string
+						    # Only maps IDs that existed in the original design.
+						    # New star block IDs (> max original) return NA from this lookup.
+						    rev_map  <- setNames(names(vmap), as.character(vmap))
+						    max_orig <- max(as.integer(vmap), na.rm = TRUE)  # highest original block ID
+						    block_ids_na <- as.integer(as.character(df[[new_col]][na_rows]))
+						    orig_vals    <- rev_map[as.character(block_ids_na)]
+						    # Rows where lookup still returned NA are star block rows (new sessions)
+						    is_star_row  <- is.na(orig_vals)
+						    # Fill original-session rows
+						    non_star <- na_rows[!is_star_row]
+						    if (length(non_star) > 0)
+						      df[[orig_col]][non_star] <- orig_vals[!is_star_row]
+						    # Label star block rows as s.N or s.c.N
+						    star_rows <- na_rows[is_star_row]
+						    if (length(star_rows) > 0) {
+						      star_block_ids <- block_ids_na[is_star_row]
+						      # Star block sequence number: 1 for the first star block, 2 for second, ...
+						      unique_star_blocks <- sort(unique(star_block_ids))
+						      star_seq <- setNames(seq_along(unique_star_blocks),
+						                           as.character(unique_star_blocks))
+						      # Determine if each star row is an axial point or a star center point.
+						      # A star CENTER point has all numeric factors at their midpoint (coded 0).
+						      # An AXIAL point has exactly one factor off-center.
+						      # If numeric_factors is not supplied, treat all star rows as axial.
+						      for (si in seq_along(star_rows)) {
+						        row_idx  <- star_rows[si]
+						        blk_id   <- star_block_ids[si]
+						        seq_n    <- star_seq[as.character(blk_id)]
+						        is_center_row <- FALSE
+						        if (!is.null(numeric_factors) && length(numeric_factors) >= 1) {
+						          row_vals <- suppressWarnings(
+						            as.numeric(as.character(unlist(df[row_idx, numeric_factors, drop = TRUE]))))
+						          if (!any(is.na(row_vals))) {
+						            midpoints <- sapply(numeric_factors, function(fn) {
+						              all_vals <- suppressWarnings(as.numeric(as.character(df[[fn]])))
+						              mean(range(all_vals, na.rm = TRUE))
+						            })
+						            is_center_row <- all(abs(row_vals - midpoints) < 1e-8)
+						          }
+						        }
+						        df[[orig_col]][row_idx] <- if (is_center_row)
+						          paste0('s.c.', seq_n)
+						        else
+						          paste0('s.', seq_n)
+						      }
+						    }
+						    df
+						  }
+						  .bsky_tr_cache <- design.info(cube)$bsky_block_translation
 
 
 						  # -------------------------------------------------------
@@ -404,6 +774,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 										di                  = di)
 
 									cube <- rbind(cube, center_points)
+									cube <- bsky_backfill_blocks_orig(cube, .bsky_tr_cache)
 
 									base_type  <- bsky_extract_base_type(di$type)
 									di$type    <- paste(base_type, "with center points")
@@ -424,6 +795,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 										di                  = di)
 
 									cube <- rbind(cube, center_points)
+									cube <- bsky_backfill_blocks_orig(cube, .bsky_tr_cache)
 									class(cube) <- c("design", "data.frame")
 
 									base_type  <- bsky_extract_base_type(di$type)
@@ -484,6 +856,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 								  }
 
 								  cube     <- rbind(cube, additional_centers)
+								  cube     <- bsky_backfill_blocks_orig(cube, .bsky_tr_cache)
 								  di$ncenter <- existing_center_count + actual_to_add
 								  di$nruns   <- nrow(cube)
 								  class(cube) <- c("design", "data.frame")
@@ -623,7 +996,17 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							# Print summary for add.star = FALSE case
 							cat("\n=== CCD Augmentation Summary ===\n")
 							cat("Design type:", di$type, "\n")
-							cat("Total runs:", di$nruns, "\n\n")
+							cat("Total runs:", nrow(cube), "\n")
+							.bsky_tr_sum <- design.info(cube)$bsky_block_translation
+							if (!is.null(.bsky_tr_sum) && !is.null(.bsky_tr_sum$reps_per_block) &&
+							    (.bsky_tr_sum$reps_per_block > 1 || .bsky_tr_sum$n_sessions > 1)) {
+							  cat("Replications:", .bsky_tr_sum$n_sessions, "(",
+							      if (.bsky_tr_sum$format == "Format B (replications only, no original block structure)")
+							        paste(.bsky_tr_sum$n_sessions, "reps, no blocks")
+							      else paste(.bsky_tr_sum$n_orig_blocks, "block(s) x",
+							               .bsky_tr_sum$reps_per_block, "rep(s)"), ")\n")
+							}
+							cat("\n")
 							
 							if (n_categorical > 0) {
 							  cat_combos <- unique(cube[, categorical_factors, drop = FALSE])
@@ -640,17 +1023,17 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 								n_cat_combos <- nrow(cat_combos)
 								centers_per_combo_orig <- existing_center_count / n_cat_combos
 								cat("Original design:\n")
-								cat("  - Factorial runs:", di$ncube, "\n")
+								cat("  - Factorial runs:", .bsky_n_original_rows, "\n")
 								cat("  - Center points:", existing_center_count, 
 									paste0("(", centers_per_combo_orig, " per combo x ", n_cat_combos, " combos)"), "\n\n")
 							  } else {
 								cat("Original design:\n")
-								cat("  - Factorial runs:", di$ncube, "\n")
+								cat("  - Factorial runs:", .bsky_n_original_rows, "\n")
 								cat("  - Center points:", existing_center_count, "\n\n")
 							  }
 							} else {
 							  cat("Original design:\n")
-							  cat("  - Factorial runs:", di$ncube, "\n")
+							  cat("  - Factorial runs:", .bsky_n_original_rows, "\n")
 							  cat("  - Center points: 0\n\n")
 							}
 							
@@ -673,7 +1056,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							
 							# Final totals
 							cat("\nFinal design:\n")
-							cat("  - Factorial runs:", di$ncube, "\n")
+							cat("  - Factorial runs:", .bsky_n_original_rows, "\n")
 							cat("  - Total center points:", di$ncenter, "\n")
 							
 							# If design has star points, show them
@@ -681,7 +1064,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							  cat("  - Total star points:", di$nstar, "(axial only, no new star centers added)\n")
 							}
 							
-							cat("  - Total runs:", di$nruns, "\n")
+							cat("  - Total runs:", nrow(cube), "\n")
 							#cat("================================")
 							
 							return(cube)
@@ -767,6 +1150,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							}
 
 							cube <- rbind(cube, additional_centers)
+							cube <- bsky_backfill_blocks_orig(cube, .bsky_tr_cache)
 							di$ncenter <- current_center_count + centers_to_add_cube_total
 							di$nruns   <- nrow(cube)
 							design.info(cube) <- di
@@ -1039,6 +1423,9 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							  }
 							  
 							  # Combine with original cube
+							  # 'more' already contains Blocks.orig (set by bsky_normalise_block_encoding)
+							  # because more = setdiff(colnames(cube), c(factor.names, block.name)).
+							  # Do NOT add it again — that creates a duplicate Blocks.orig.1 column.
 							  col_order <- c(names(factor.names), more)
 							  design <- rbind(cube[, col_order, drop = FALSE], 
 											  expanded_star[, col_order, drop = FALSE])
@@ -1086,6 +1473,12 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							}
 							colnames(design)[1] <- block.name
 							design[[block.name]] <- factor(design[[block.name]])
+							  # Backfill Blocks.orig now that block column exists
+							  if (!is.null(.bsky_tr_cache) && !is.null(.bsky_tr_cache$original_col) &&
+							      .bsky_tr_cache$original_col %in% colnames(design)) {
+							    design <- bsky_backfill_blocks_orig(design, .bsky_tr_cache,
+							                                         numeric_factors = numeric_factors)
+							  }
 							
 						  } else {
 							# No categorical factors case
@@ -1098,6 +1491,8 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							  colnames(star_factor_rows) <- numeric_factors
 							  if (length(more) > 0) {
 								for (.mc in more) star_factor_rows[[.mc]] <- NA
+								# Blocks.orig is in 'more' — NA is correct for star rows
+								# (will be filled with s.N/s.c.N by backfill after cbind)
 							  }
 							  cube_factor_cols <- c(names(factor.names), more)
 							  design <- rbind(
@@ -1124,8 +1519,15 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							  colnames(design)[1] <- block.name
 							  design[[block.name]] <- factor(design[[block.name]])
 							  rownames(design) <- 1:nrow(design)
+							  # Backfill Blocks.orig now that block column exists
+							  if (!is.null(.bsky_tr_cache) && !is.null(.bsky_tr_cache$original_col) &&
+							      .bsky_tr_cache$original_col %in% colnames(design)) {
+							    design <- bsky_backfill_blocks_orig(design, .bsky_tr_cache,
+							                                         numeric_factors = numeric_factors)
+							  }
 							} else {
 							  # No star points - just cube with center points
+							  # 'more' already contains Blocks.orig — do not add again
 							  col_order <- c(names(factor.names), more)
 							  design <- cube[, col_order, drop = FALSE]
 							  
@@ -1210,11 +1612,43 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						  di$add_star <- add.star
 						  
 						  design.info(design) <- di
-						  
+
+						  # ── Correct di$ncube/ncenter/nstar from actual row data ──────────────
+						  # Values set above use per-replication or aus-based counts that ignore
+						  # replication in the cube. Recount from the final design data directly.
+						  tryCatch({
+						    .bsky_di_fix <- design.info(design)
+						    .bsky_ax <- if (exists("bsky_identify_axial_points"))
+						      bsky_identify_axial_points(design, repair = FALSE) else integer(0)
+						    .bsky_ct <- if (exists("bsky_identify_center_points"))
+						      bsky_identify_center_points(design) else integer(0)
+						    .bsky_n_ax <- length(.bsky_ax)
+						    .bsky_n_ct <- length(.bsky_ct)
+						    .bsky_n_cb <- nrow(design) - .bsky_n_ax - .bsky_n_ct
+						    if (!isTRUE(.bsky_di_fix$nstar   == .bsky_n_ax) ||
+						        !isTRUE(.bsky_di_fix$ncenter == .bsky_n_ct) ||
+						        !isTRUE(.bsky_di_fix$ncube   == .bsky_n_cb)) {
+						      .bsky_di_fix$nstar   <- .bsky_n_ax
+						      .bsky_di_fix$ncenter <- .bsky_n_ct
+						      .bsky_di_fix$ncube   <- .bsky_n_cb
+						      design.info(design)  <- .bsky_di_fix
+						    }
+						  }, error = function(e) { })
+
 						  # Print summary
 						  cat("\n=== CCD Augmentation Summary ===\n")
 						  cat("Design type:", di$type, "\n")
-						  cat("Total runs:", di$nruns, "\n\n")
+						  cat("Total runs:", nrow(design), "\n")
+						  .bsky_tr_sum2 <- design.info(cube)$bsky_block_translation
+						  if (!is.null(.bsky_tr_sum2) && !is.null(.bsky_tr_sum2$reps_per_block) &&
+						      (.bsky_tr_sum2$reps_per_block > 1 || .bsky_tr_sum2$n_sessions > 1)) {
+						    cat("Replications:", .bsky_tr_sum2$n_sessions, "(",
+						        if (.bsky_tr_sum2$format == "Format B (replications only, no original block structure)")
+						          paste(.bsky_tr_sum2$n_sessions, "reps, no blocks")
+						        else paste(.bsky_tr_sum2$n_orig_blocks, "block(s) x",
+						                   .bsky_tr_sum2$reps_per_block, "rep(s)"), ")\n")
+						  }
+						  cat("\n")
 						  
 						  if (n_categorical > 0) {
 							cat("Categorical factors:", n_categorical, 
@@ -1227,17 +1661,17 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							if (n_categorical > 0) {
 							  centers_per_combo_orig <- existing_center_count / n_cat_combos
 							  cat("Original design:\n")
-							  cat("  - Factorial runs:", di$ncube, "\n")
+							  cat("  - Factorial runs:", .bsky_n_original_rows, "\n")
 							  cat("  - Center points:", existing_center_count, 
 								  paste0("(", centers_per_combo_orig, " per combo x ", n_cat_combos, " combos)"), "\n\n")
 							} else {
 							  cat("Original design:\n")
-							  cat("  - Factorial runs:", di$ncube, "\n")
+							  cat("  - Factorial runs:", .bsky_n_original_rows, "\n")
 							  cat("  - Center points:", existing_center_count, "\n\n")
 							}
 						  } else {
 							cat("Original design:\n")
-							cat("  - Factorial runs:", di$ncube, "\n")
+							cat("  - Factorial runs:", .bsky_n_original_rows, "\n")
 							cat("  - Center points: 0\n\n")
 						  }
 						  
@@ -1277,12 +1711,12 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						  
 						  # Final totals
 						  cat("\nFinal design:\n")
-						  cat("  - Factorial runs:", di$ncube, "\n")
+						  cat("  - Factorial runs:", .bsky_n_original_rows, "\n")
 						  cat("  - Total center points:", di$ncenter, "\n")
 						  if (add.star) {
 							cat("  - Total star points:", di$nstar, "(axial + star centers)\n")
 						  }
-						  cat("  - Total runs:", di$nruns, "\n")
+						  cat("  - Total runs:", nrow(design), "\n")
 						  #cat("================================")
 						  
 						  design

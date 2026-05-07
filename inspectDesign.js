@@ -268,7 +268,6 @@ class inspectDesign extends baseModal {
 				
 				if(c("design") %in% class({{dataset.name}}))
 				{
-					
 					{{if(options.selected.responseVariablesChk == "TRUE")}}
 						BSkyFormat(paste("Design Type:", attributes({{dataset.name}})$design.info$type,"and Number of Runs:", attributes({{dataset.name}})$design.info$nruns))
 						BSkyFormat(paste("Response variable(s):", paste(response.names({{dataset.name}}), collapse=", ")))
@@ -276,7 +275,13 @@ class inspectDesign extends baseModal {
 					
 					{{if(options.selected.axialCenterPointRowsChk == "TRUE")}}
 					   #bsky_summarize_design_point_rows will return the design after any star/center/cube row count repairs in the design info section
-						{{dataset.name}}  = bsky_summarize_design_point_rows({{dataset.name}}, tol = 1e-8)
+						tryCatch({
+						  {{dataset.name}} = bsky_summarize_design_point_rows({{dataset.name}}, tol = 1e-8)
+						}, error = function(e) {
+						  #cat("NOTE: Design point summary could not be computed:", conditionMessage(e), "n")
+						  cat("Factorial (Cube) points:", nrow({{dataset.name}}), "rows (a maximum of 20 row numbers are shown) -", 
+						  if(nrow({{dataset.name}})> 0) paste(seq(1: 20), collapse=", ") else "none", "\n")
+						})
 					{{/if}}
 					
 					
