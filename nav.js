@@ -1,30 +1,21 @@
-/**
-  * This file is protected by copyright (c) 2023-2025 by BlueSky Statistics, LLC.
-  * All rights reserved. The copy, modification, or distribution of this file is not
-  * allowed without the prior written permission from BlueSky Statistics, LLC.
- */
-
-const {getT} = global.requireFromRoot("localization");
-let t = getT('menutoolbar')
-const nav = () => ({
-    "name": t('doe_top_level_title'),// {ns: 'menutoolbar'}),
-    "tab": "DoE",
+const nav = {
+    "id": "menu-doe",
     "buttons": [
         "./doeOverview",
         {
-            "name": t('doe_Create_DoE_Factor_Table'),// {ns: 'menutoolbar'}),
+            "id": "menu-doe-createdoefactortable",
             "icon": "icon-doe",
             "children": [
                 "./createDoEgrid",
                 "./createDoEgrid2"
             ]
         },
-		
+ 		
         "./importDesign",
         "./exportDesign",
 
         {
-            "name": t('doe_Create_Design'),// {ns: 'menutoolbar'}),
+            "id": "menu-doe-createdesign",
             "icon": "icon-doe",
             "children": [
                 "./create2LevelDesign",
@@ -38,7 +29,7 @@ const nav = () => ({
             ]
         },
         {
-            "name": t('doe_Inspect_Design'),// {ns: 'menutoolbar'}),
+            "id": "menu-doe-inspectdesign",
             "icon": "icon-doe",
             "children": [
                 "./inspectDesign",
@@ -48,7 +39,7 @@ const nav = () => ({
             ]
         },
         {
-            "name": t('doe_Modify_Design'),// {ns: 'menutoolbar'}),
+            "id": "menu-doe-modifydesign",
             "icon": "icon-doe",
             "children": [
                 "./createCentralCompositeDesignMixedFactors",
@@ -57,7 +48,7 @@ const nav = () => ({
             ]
         },
         {
-            "name": t('doe_Analyze_Design'),// {ns: 'menutoolbar'}),
+            "id": "menu-doe-analyzedesign",
             "icon": "icon-doe",
             "children": [
                 "./linearRegressionCurvTestDoE",
@@ -67,14 +58,11 @@ const nav = () => ({
                 "./effectsPlot2LevelFactor"
                 
             ]
-        }                                               
+        }
 
         
     ]
 
-})
-
-module.exports = {
-    nav: nav(),
-    render: () => nav()
 }
+
+module.exports.nav = nav
