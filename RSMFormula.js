@@ -462,6 +462,26 @@ bsky_rsm_enforce_heredity <- function(full_model, reduced_model, response_var) {
 )
 cat("Numeric RSM predictors identified:", paste(.bsky_num_vars, collapse = ", "), "\n\n")
 
+# ── Force-keep variables: main effects that must never be dropped by stepwise ──
+# Validated against the confirmed numeric RSM predictors of the fitted model.
+# Anything selected that is not a genuine numeric RSM predictor (mistyped,
+# a block/categorical covariate, or not actually part of the formula) is
+# silently excluded with a warning rather than causing an error.
+.bsky_force_keep_vars_raw <- {{if(options.selected.forceKeepVars !== "")}}c({{selected.forceKeepVars | safe}}){{#else}}character(0){{/if}}
+
+.bsky_force_keep_vars     <- intersect(.bsky_force_keep_vars_raw, .bsky_num_vars)
+.bsky_force_keep_invalid  <- setdiff(.bsky_force_keep_vars_raw, .bsky_num_vars)
+
+if (length(.bsky_force_keep_invalid) > 0) {
+  cat("NOTE: The following force-keep selections are not numeric RSM predictors\n")
+  cat("      in the fitted model and will be ignored:",
+      paste(.bsky_force_keep_invalid, collapse = ", "), "\n\n")
+}
+if (length(.bsky_force_keep_vars) > 0) {
+  cat("Force-keep main effects (added back after selection if not naturally retained):",
+      paste(.bsky_force_keep_vars, collapse = ", "), "\n\n")
+}
+
 # Extract ALL non-numeric covariate terms from the formula (block, categorical
 # covariates like Paintbox, Position, etc.). These must be preserved in the
 # refit formula even though they are not part of the RSM surface optimisation.
@@ -606,6 +626,9 @@ if ({{selected.stepwiseChk | safe}}) {
   if (.bsky_method %in% c("stepwise", "backward")) cat("  Alpha to remove :", .bsky_a_remove, "\n")
   if (.bsky_method == "forward_ic") cat("  IC criterion    :", .bsky_criterion, "\n")
   cat("  Hierarchy       :", ifelse(.bsky_hier, "Required at each step", "Not enforced"), "\n")
+  cat("  Force-keep vars :", if (length(.bsky_force_keep_vars) > 0)
+                                paste(.bsky_force_keep_vars, collapse = ", ")
+                              else "(none)", "\n")
   cat("\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n\n")
 
   # Full-model baseline statistics — suppress near-stationary-ridge warnings
@@ -660,6 +683,12 @@ if ({{selected.stepwiseChk | safe}}) {
     # The scope must include ALL candidate terms: numeric RSM terms AND
     # categorical covariates (Paintbox, Position etc.).
     # Block terms are forced into the lower bound so they are always present.
+    # NOTE: force-keep variables are intentionally NOT forced in here — the
+    # search runs fully unconstrained. Any force-keep variable missing from
+    # the final selected model is added back as a main effect afterward
+    # (see the post-hoc force-keep check below), so as not to distort the
+    # p-values / IC comparisons computed for any other candidate term during
+    # the search itself.
     .bsky_fwdic_lower_rhs <- if (length(.bsky_block_terms) > 0)
       paste(.bsky_block_terms, collapse = " + ")
     else "1"
@@ -826,6 +855,11 @@ if ({{selected.stepwiseChk | safe}}) {
     # "stepwise" (both) and "backward" start from the FULL candidate set PLUS
     # block terms (which are forced structural and must always remain).
     # "forward" alone starts with block terms only (forced), then adds others.
+    # NOTE: force-keep variables are intentionally NOT forced into the starting
+    # set — the search runs fully unconstrained so that no other candidate
+    # term's evaluated p-value is distorted by an artificially-present term.
+    # Any force-keep variable missing from the final result is added back as
+    # a main effect afterward (see the post-hoc force-keep check below).
     .bsky_current_terms <- if (.bsky_direction %in% c("both", "backward")) {
       unique(c(.bsky_block_terms, .bsky_all_terms))
     } else {
@@ -843,7 +877,9 @@ if ({{selected.stepwiseChk | safe}}) {
       # For "both" and "backward": remove the least significant term first,
       # then (for "both") check if any previously removed term should re-enter.
       if (.bsky_direction %in% c("both", "backward") && length(.bsky_current_terms) > 0) {
-        # Block terms are structural — never candidates for removal
+        # Block terms are structural — never candidates for removal.
+        # NOTE: force-keep vars are NOT excluded here — the search is fully
+        # unconstrained. See the post-hoc force-keep check below.
         .bsky_removable <- names(which(bsky_removable_terms(.bsky_current_terms)))
         .bsky_removable <- .bsky_removable[!.bsky_removable %in% .bsky_block_terms]
 
@@ -1001,76 +1037,141 @@ if ({{selected.stepwiseChk | safe}}) {
         "term.labels"
       )
 
-      cat("\nSelected terms (after heredity enforcement):\n")
+      cat("\nSelected terms (after heredity enforcement, unconstrained search):\n")
       cat(" ", paste(.bsky_reduced_tlabs, collapse = ", "), "\n\n")
 
-      # Build covariate_terms for the reduced model:
-      # Always include block terms (structural). Include categorical covariates
-      # only if stepwise selected them (they appear in .bsky_reduced_tlabs).
-      .bsky_selected_categ <- intersect(.bsky_categ_terms, .bsky_reduced_tlabs)
-      .bsky_reduced_covariates <- c(.bsky_block_terms, .bsky_selected_categ)
+      # ── Helper: build covariates + refit a candidate term set as rsm ────────
+      # Used twice below: once for the unconstrained reduced model, and again
+      # for the force-keep-augmented model only if force-keep addition is
+      # actually needed. Keeping this logic in one place avoids duplicating
+      # the covariate-splitting and numeric-var-extraction code.
+      .bsky_build_reduced_rsm <- function(tlabs) {
+        selected_categ <- intersect(.bsky_categ_terms, tlabs)
+        covariates     <- c(.bsky_block_terms, selected_categ)
+        rsm_only       <- tlabs[!tlabs %in% covariates]
+        final_num_vars <- intersect(
+          unique(unlist(lapply(rsm_only, function(t) {
+            if (grepl(":", t, fixed = TRUE)) {
+              strsplit(t, ":", fixed = TRUE)[[1]]          # x:y → c(x,y)
+            } else if (grepl("^I\\\\((.+)\\\\^2\\\\)$", t)) {
+              sub("^I\\\\((.+)\\\\^2\\\\)$", "\\\\1", t)  # I(x^2) → x
+            } else {
+              t                                            # plain main effect
+            }
+          }))),
+          .bsky_num_vars
+        )
+        model <- suppressMessages(bsky_refit_as_rsm(
+          term_labels      = rsm_only,
+          resp_var         = "{{selected.dependent | safe}}",
+          numeric_vars     = .bsky_num_vars,
+          dataset_name     = "{{dataset.name}}",
+          covariate_terms  = covariates
+        ))
+        list(model = model, final_num_vars = final_num_vars)
+      }
 
-      # Remove selected categorical covariates from term_labels since they go
-      # into covariate_terms, not into FO/PQ/TWI macros
-      .bsky_rsm_only_tlabs <- .bsky_reduced_tlabs[
-        !.bsky_reduced_tlabs %in% .bsky_reduced_covariates
-      ]
+      # ── Helper: standard stat bundle used in the comparison table ───────────
+      .bsky_model_stat_bundle <- function(model) {
+        smry <- suppressMessages(summary(model))
+        c(
+          Terms  = length(coef(model)),
+          R2     = smry$r.squared,
+          R2adj  = smry$adj.r.squared,
+          R2pred = bsky_rsm_r2pred(model),
+          PRESS  = bsky_rsm_press(model),
+          AIC    = AIC(model),
+          AICc   = bsky_rsm_aicc(model),
+          BIC    = BIC(model)
+        )
+      }
+      .bsky_stat_order <- c("Terms", "R2", "R2adj", "R2pred", "PRESS", "AIC", "AICc", "BIC")
 
-      # Derive numeric vars actually present in the REDUCED model.
-      # .bsky_num_vars holds all numeric vars from the full model — after
-      # stepwise some may have been dropped entirely. Extract variable names
-      # from the reduced RSM terms (plain names, I(x^2), and x:y interactions)
-      # and keep only those confirmed as numeric RSM predictors.
-      .bsky_final_num_vars <- intersect(
-        unique(unlist(lapply(.bsky_rsm_only_tlabs, function(t) {
-          if (grepl(":", t, fixed = TRUE)) {
-            strsplit(t, ":", fixed = TRUE)[[1]]          # x:y → c(x,y)
-          } else if (grepl("^I\\\\((.+)\\\\^2\\\\)$", t)) {
-            sub("^I\\\\((.+)\\\\^2\\\\)$", "\\\\1", t)  # I(x^2) → x
-          } else {
-            t                                            # plain main effect
-          }
-        }))),
-        .bsky_num_vars
-      )
+      # ── Step A: refit the UNCONSTRAINED reduced model (no force-keep applied) ──
+      .bsky_unconstrained_build <- .bsky_build_reduced_rsm(.bsky_reduced_tlabs)
+      .bsky_unconstrained_stats <- .bsky_model_stat_bundle(.bsky_unconstrained_build$model)
+      cat("Unconstrained reduced model class:", class(.bsky_unconstrained_build$model), "\n\n")
 
-      {{selected.modelname | safe}} <- suppressMessages(bsky_refit_as_rsm(
-        term_labels  = .bsky_rsm_only_tlabs,
-        resp_var     = "{{selected.dependent | safe}}",
-        numeric_vars = .bsky_num_vars,
-        dataset_name = "{{dataset.name}}",
-        covariate_terms = .bsky_reduced_covariates
-      ))
+      # ── Step B: post-hoc force-keep check ────────────────────────────────────
+      # The stepwise search above ran completely unconstrained — force-keep
+      # variables had no special treatment during selection, so no other
+      # candidate term's evaluated p-value / IC was distorted by an
+      # artificially-present term. Now, after the natural search has produced
+      # its result, check which force-keep variables are present vs missing.
+      # A force-keep variable is already present either because it was
+      # directly selected, or because hierarchy retained it for a selected
+      # interaction/quadratic term — in both cases nothing further is done.
+      # Only genuinely absent variables are added back, as a plain main
+      # effect term only.
+      .bsky_force_keep_missing  <- setdiff(.bsky_force_keep_vars, .bsky_reduced_tlabs)
+      .bsky_force_keep_retained <- intersect(.bsky_force_keep_vars, .bsky_reduced_tlabs)
 
-      cat("Reduced model class:", class({{selected.modelname | safe}}), "\n\n")
+      if (length(.bsky_force_keep_vars) > 0) {
+        cat("Force-keep variable status:\n")
+        cat("  Naturally retained by unconstrained selection:",
+            if (length(.bsky_force_keep_retained) > 0)
+              paste(.bsky_force_keep_retained, collapse = ", ") else "(none)", "\n")
+        cat("  Added back as main effect (did not survive unconstrained selection):",
+            if (length(.bsky_force_keep_missing) > 0)
+              paste(.bsky_force_keep_missing, collapse = ", ") else "(none)", "\n\n")
+      }
 
-      # ── Comparison table: full vs reduced model ───────────────────────────
-      .bsky_red_smry   <- suppressMessages(summary({{selected.modelname | safe}}))
-      .bsky_red_r2     <- .bsky_red_smry$r.squared
-      .bsky_red_r2adj  <- .bsky_red_smry$adj.r.squared
-      .bsky_red_press  <- bsky_rsm_press({{selected.modelname | safe}})
-      .bsky_red_r2pred <- bsky_rsm_r2pred({{selected.modelname | safe}})
-      .bsky_red_aic    <- AIC({{selected.modelname | safe}})
-      .bsky_red_aicc   <- bsky_rsm_aicc({{selected.modelname | safe}})
-      .bsky_red_bic    <- BIC({{selected.modelname | safe}})
-      .bsky_n_red      <- length(coef({{selected.modelname | safe}}))
+      if (length(.bsky_force_keep_missing) == 0) {
 
-      .bsky_compare <- data.frame(
-        Metric        = c("Terms", "R\u00b2", "R\u00b2(adj)", "R\u00b2(pred/PRESS)", "PRESS", "AIC", "AICc", "BIC"),
-        Full_model    = round(c(.bsky_n_full, .bsky_full_r2, .bsky_full_r2adj, .bsky_full_r2pred,
-                                .bsky_full_press, .bsky_full_aic, .bsky_full_aicc, .bsky_full_bic), 4),
-        Reduced_model = round(c(.bsky_n_red,  .bsky_red_r2,  .bsky_red_r2adj,  .bsky_red_r2pred,
-                                .bsky_red_press,  .bsky_red_aic,  .bsky_red_aicc,  .bsky_red_bic),  4),
-        stringsAsFactors = FALSE
-      )
+        # ── No forcing needed — the unconstrained model IS the final model ────
+        {{selected.modelname | safe}} <- .bsky_unconstrained_build$model
+        .bsky_final_num_vars          <- .bsky_unconstrained_build$final_num_vars
 
-      if (abs(.bsky_red_r2 - .bsky_red_r2pred) > 0.2) {
-        cat("WARNING: Gap between R\u00b2 and R\u00b2(pred) exceeds 0.2 in the reduced model.\n")
+        cat("Reduced model class:", class({{selected.modelname | safe}}), "\n\n")
+
+        .bsky_compare <- data.frame(
+          Metric        = c("Terms", "R\u00b2", "R\u00b2(adj)", "R\u00b2(pred/PRESS)", "PRESS", "AIC", "AICc", "BIC"),
+          Full_model    = round(c(.bsky_n_full, .bsky_full_r2, .bsky_full_r2adj, .bsky_full_r2pred,
+                                  .bsky_full_press, .bsky_full_aic, .bsky_full_aicc, .bsky_full_bic), 4),
+          Reduced_model = round(unname(.bsky_unconstrained_stats[.bsky_stat_order]), 4),
+          stringsAsFactors = FALSE
+        )
+        .bsky_compare_title <- "Model Selection Summary: Full vs Reduced RSM Model"
+        .bsky_final_r2      <- .bsky_unconstrained_stats["R2"]
+        .bsky_final_r2pred  <- .bsky_unconstrained_stats["R2pred"]
+
+      } else {
+
+        # ── Forcing needed — augment the term set and refit as the FINAL model ──
+        .bsky_forced_tlabs <- unique(c(.bsky_reduced_tlabs, .bsky_force_keep_missing))
+        .bsky_forced_build <- .bsky_build_reduced_rsm(.bsky_forced_tlabs)
+        .bsky_forced_stats <- .bsky_model_stat_bundle(.bsky_forced_build$model)
+
+        {{selected.modelname | safe}} <- .bsky_forced_build$model
+        .bsky_final_num_vars          <- .bsky_forced_build$final_num_vars
+
+        cat("Reduced model class (after force-keep addition):",
+            class({{selected.modelname | safe}}), "\n\n")
+
+        # ── Three-column comparison: Full | Reduced (unconstrained) | Reduced+Forced ──
+        # Shown only when at least one force-keep variable actually needed to
+        # be added back, so the user can directly see what forcing that
+        # variable into the model cost (or gained) relative to what stepwise
+        # would have produced on its own.
+        .bsky_compare <- data.frame(
+          Metric                = c("Terms", "R\u00b2", "R\u00b2(adj)", "R\u00b2(pred/PRESS)", "PRESS", "AIC", "AICc", "BIC"),
+          Full_model            = round(c(.bsky_n_full, .bsky_full_r2, .bsky_full_r2adj, .bsky_full_r2pred,
+                                          .bsky_full_press, .bsky_full_aic, .bsky_full_aicc, .bsky_full_bic), 4),
+          Reduced_unconstrained = round(unname(.bsky_unconstrained_stats[.bsky_stat_order]), 4),
+          Reduced_with_forced   = round(unname(.bsky_forced_stats[.bsky_stat_order]), 4),
+          stringsAsFactors = FALSE
+        )
+        .bsky_compare_title <- "Model Selection Summary: Full vs Unconstrained Reduced vs Reduced+Forced RSM Model"
+        .bsky_final_r2      <- .bsky_forced_stats["R2"]
+        .bsky_final_r2pred  <- .bsky_forced_stats["R2pred"]
+      }
+
+      if (abs(.bsky_final_r2 - .bsky_final_r2pred) > 0.2) {
+        cat("WARNING: Gap between R\u00b2 and R\u00b2(pred) exceeds 0.2 in the final model.\n")
         cat("         This may indicate overfitting. Consider retaining more terms.\n\n")
       }
 
-      BSkyFormat(.bsky_compare,
-                 outputTableRenames = c("Model Selection Summary: Full vs Reduced RSM Model"))
+      BSkyFormat(.bsky_compare, outputTableRenames = c(.bsky_compare_title))
     }
   }
 
@@ -1421,203 +1522,14 @@ if (!is.null(.bsky_canonical))
              outputTableRenames = c("Eigen Values", "Eigen Vectors"))
 
 #Display Contour(Plots)
-#BSkyFormat("Display Contour(Plots)")
-#par(mfrow=c(1,1))
-#if({{selected.generateContourPlotChk | safe}}) graphics::contour({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image=TRUE, at=summary({{selected.modelname | safe}}\$canonical$xs))
-
-#Display the Response Surface (Plots)
-#BSkyFormat("Display the Response Surface (Plots)")
-#par(mfrow=c(1,1))
-#if({{selected.generateRSMPlotChk | safe}}) suppressWarnings(graphics::persp({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image = TRUE,at = c(summary({{selected.modelname | safe}}\$canonical$xs), Block="B2"),theta=30,zlab="{{selected.dependent | safe}} in MPa",col.lab=33,contour="colors"))
-
-
- # ── Create optimization-ready companion lm (block terms absorbed) ────
-          # Only created when the user checks the option AND block terms exist.
-          # Block/structural terms (Block.ccd etc.) are NOT controllable factors
-          # and must not be free variables in optim(). The standard practice is
-          # to absorb their contribution into the intercept at a representative
-          # block level (most frequent block = typical production conditions),
-          # giving a block-free model whose intercept correctly reflects the
-          # average operating condition.
-        
-		 if (exists('{{selected.modelname | safe}}_lm_optim_{{dataset.name}}')) rm({{selected.modelname | safe}}_lm_optim_{{dataset.name}}) 
-		  
-			  if( length(.bsky_block_terms) > 0) {
-				  .bsky_final_formula_str <- paste(
-							deparse(formula({{selected.modelname | safe}})), collapse = " "
-					)
-				   .bsky_final_has_macros <- any(grepl(
-					  "\\\\b(FO|SO|TWI|PQ|PE)\\\\s*\\\\(", .bsky_final_formula_str
-					))
-
-					if (.bsky_final_has_macros) {
-							.bsky_expanded_numeric_tlabs <- attr(
-								terms(bsky_rsm_to_lm({{selected.modelname | safe}}, {{dataset.name}})),
-								"term.labels"
-							)
-
-						  .bsky_final_all_vars <- setdiff(
-							all.vars(formula({{selected.modelname | safe}})),
-							"{{selected.dependent | safe}}"
-						  )
-						  .bsky_companion_covariate_tlabs <- .bsky_final_all_vars[
-							sapply(.bsky_final_all_vars, function(.v) {
-							  if (!.v %in% names({{dataset.name}}))         return(FALSE)
-							  if (.v %in% bsky_numeric_model_predictors)    return(FALSE)
-							  .col <- {{dataset.name}}[[.v]]
-							  if (is.factor(.col) || is.character(.col))    return(TRUE)
-							  if (is.numeric(.col) || is.integer(.col)) {
-								.uv <- sort(unique(.col[!is.na(.col)]))
-								.n  <- length(.uv)
-								return(.n <= 20 && all(.col == floor(.col), na.rm = TRUE) &&
-									   all(.uv == seq_len(.n)))
-							  }
-							  FALSE
-							})
-						  ]
-
-						  # Companion formula: covariate terms first (Block.ccd, Paintbox etc.)
-						  # then expanded numeric RSM terms — preserving the standard convention
-						  # of covariates before predictors.
-						  .bsky_companion_all_tlabs <- unique(c(
-							.bsky_companion_covariate_tlabs,
-							.bsky_expanded_numeric_tlabs
-						  ))
-					}
-					# Representative block level: most frequent value in the dataset
-					# (reflects typical / production-run conditions)
-					.bsky_optim_block_level <- as.numeric(names(which.max(
-					  table({{dataset.name}}[[.bsky_block_terms[1]]])
-					)))
-					if(FALSE){
-						cat(sprintf(
-						  "\nBuilding optimization-ready companion lm: block fixed at level %g (most frequent).\n",
-						  .bsky_optim_block_level
-						))
-					}
-
-					# Numeric terms only — drop all block/structural terms from formula
-					.bsky_optim_numeric_tlabs <- .bsky_companion_all_tlabs[
-					  !.bsky_companion_all_tlabs %in% .bsky_block_terms
-					]
-
-					# Also drop any remaining categorical covariates that were in the
-					# companion formula — optimization should be over pure numeric space.
-					.bsky_optim_numeric_tlabs <- .bsky_optim_numeric_tlabs[
-					  !.bsky_optim_numeric_tlabs %in% .bsky_categ_terms
-					]
-
-					if (length(.bsky_optim_numeric_tlabs) == 0) {
-						if(FALSE){
-						  cat("NOTE: No numeric RSM terms remain after removing block/covariate terms.\n")
-						  cat("      Optimization-ready companion model will not be created.\n")
-						}
-					} else {
-
-					  # Build the block-free formula
-					  .bsky_optim_fmla <- as.formula(paste(
-						"{{selected.dependent | safe}} ~",
-						paste(.bsky_optim_numeric_tlabs, collapse = " + ")
-					  ))
-
-					  # Fit on original data — we will adjust the intercept afterwards
-					  .bsky_optim_call <- call("lm",
-						formula   = .bsky_optim_fmla,
-						na.action = quote(na.exclude)
-					  )
-					  .bsky_optim_call[["data"]] <- as.name("{{dataset.name}}")
-					  .bsky_lm_optim <- eval(.bsky_optim_call, envir = .GlobalEnv)
-
-					  # Absorb block contribution into the intercept.
-					  # For each block term: contribution = coef(rsm_model)[block_term] * block_level
-					  # This ensures predict(.bsky_lm_optim, newdata) gives the same
-					  # predicted Y as predict(rsm_model, newdata with block fixed)
-					  # at the representative block level.
-					  .bsky_block_contribution <- 0
-					  for (.bv in .bsky_block_terms) {
-							.bv_coef <- coef({{selected.modelname | safe}})[.bv]
-							if (!is.na(.bv_coef)) {
-							  .bsky_block_contribution <- .bsky_block_contribution +
-								.bv_coef * .bsky_optim_block_level
-							}
-					  }
-					  .bsky_lm_optim$coefficients["(Intercept)"] <-
-						.bsky_lm_optim$coefficients["(Intercept)"] + .bsky_block_contribution
-
-					{{selected.modelname | safe}}_lm_optim_{{dataset.name}} =  .bsky_lm_optim
-
-						if(FALSE){
-						  cat("\nNOTE: An optimization-ready companion lm model has been created:\n")
-						  cat("'{{selected.modelname | safe}}_lm_optim_{{dataset.name}}'\n")
-						  cat("Block terms absorbed into intercept at level:", .bsky_optim_block_level, "\n")
-						  cat("Numeric predictors:", paste(bsky_numeric_model_predictors, collapse = ", "), "\n")
-						  cat("Use this model with Response Optimization menus under MODEL EVALUATION > Response Optimizer.\n")
-						  cat("DO NOT use for diagnostics (predict, add statistics, etc under MODEL EVALUATION) or inference (use _lm_ model instead).\n\n")
-						}
-					}
-			  } else {
-				  if(FALSE){
-					# No block terms — the existing _lm_ companion is already optimization-ready
-					cat("\nNOTE: No block terms detected in the model.\n")
-					cat("The companion lm model '{{selected.modelname | safe}}_lm_{{dataset.name}}'\n")
-					cat("is already suitable for use with Response Optimization menus (MODEL EVALUATION > Response Optimizer) and for diagnostics (predict, add statistics, etc under MODEL EVALUATION) or inference .\n\n")
-				  }
-			 }
-	
-			 
-#Display Contour(Plots)
-{{if(options.selected.generateContourPlotChk == "TRUE" )}}
 BSkyFormat("Display Contour(Plots)")
 par(mfrow=c(1,1))
-# Use the optimization-ready companion lm (block terms absorbed into intercept)
-# when it exists — this avoids 'factor Blocks has new levels' errors because
-# the optim model has no Block term so predict() works on any numeric grid.
-# Fall back to the original rsm/lm model when no block terms are present.
-.bsky_optim_model_name <- "{{selected.modelname | safe}}_lm_optim_{{dataset.name}}"
-.bsky_model_for_plots  <- if (exists(.bsky_optim_model_name)){
-												get(.bsky_optim_model_name)
-											}else{
-												{{selected.modelname | safe}}
-											}
-
-  tryCatch(
-    graphics::contour(.bsky_model_for_plots,
-                      reformulate(bsky_numeric_model_predictors),
-                      image = TRUE,
-                      at    = summary({{selected.modelname | safe}}\$canonical$xs)),
-    error = function(e) {
-      cat("Contour plot error:", conditionMessage(e), "\n")
-      cat("TIP: If the error mentions 'Blocks has new levels', ensure the",
-          "'Create optimization-ready companion lm' option is checked.\n")
-    }
-  )
-{{/if}}
+if({{selected.generateContourPlotChk | safe}}) graphics::contour({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image=TRUE, at=summary({{selected.modelname | safe}}\$canonical$xs))
 
 #Display the Response Surface (Plots)
-{{if(options.selected.generateRSMPlotChk == "TRUE" )}}
-	par(mfrow=c(1,1))
-	BSkyFormat("Display the Response Surface (Plots)")
-  tryCatch(
-    suppressWarnings(
-      graphics::persp(.bsky_model_for_plots,
-                      reformulate(bsky_numeric_model_predictors),
-                      image   = TRUE,
-                      at      = summary({{selected.modelname | safe}}\$canonical$xs),
-                      theta   = 30,
-                      zlab    = "{{selected.dependent | safe}}",
-                      col.lab = 33,
-                      contour = "colors")
-    ),
-    error = function(e) {
-      cat("Response surface plot error:", conditionMessage(e), "\n")
-      cat("TIP: If the error mentions 'Blocks has new levels', ensure the",
-          "'Create optimization-ready companion lm' option is checked.\n")
-    }
-  )
-{{/if}}
-
-if(exists("{{selected.modelname | safe}}_lm_optim_{{dataset.name}}")) rm("{{selected.modelname | safe}}_lm_optim_{{dataset.name}}")
-
+BSkyFormat("Display the Response Surface (Plots)")
+par(mfrow=c(1,1))
+if({{selected.generateRSMPlotChk | safe}}) suppressWarnings(graphics::persp({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image = TRUE,at = c(summary({{selected.modelname | safe}}\$canonical$xs), Block="B2"),theta=30,zlab="{{selected.dependent | safe}} in MPa",col.lab=33,contour="colors"))
 
 #Show Path of steepest ascent from ridge analysis
 if({{selected.generatePathSteepestAscentChk | safe}}) {
@@ -1943,9 +1855,9 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
           attr(.bsky_lm_companion, "depVar")      <- bsky_dep_var_name
           assign("{{selected.modelname | safe}}_lm_{{dataset.name}}", .bsky_lm_companion, envir = .GlobalEnv)
 		  
-		  cat("NOTE: A companion linear i.e., lm model\n '{{selected.modelname | safe}}_lm_{{dataset.name}}'\n has been created in addition to the rsm model \n'{{selected.modelname | safe}}_{{dataset.name}}' \n")
+		  cat("NOTE: A companion linear i.e., lm model '{{selected.modelname | safe}}_lm_{{dataset.name}}' has been created in addition to the rsm model '{{selected.modelname | safe}}_{{dataset.name}}' ")
 		  cat("with all RSM macros (i.e., FO, TWI, PQ, SO) expanded to individual terms.\n")
-		  cat("Use '{{selected.modelname | safe}}_lm_{{dataset.name}}' \nmodel for standard lm-based diagnostics and predictions using analysis menus under MODEL EVALUATION on the top menu bar.\n")
+		  cat("Use '{{selected.modelname | safe}}_lm_{{dataset.name}}' model for standard lm-based diagnostics and predictions using analysis menus under MODEL EVALUATION on the top menu bar.\n")
 
           # ── Create optimization-ready companion lm (block terms absorbed) ────
           # Only created when the user checks the option AND block terms exist.
@@ -1963,7 +1875,6 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 					.bsky_optim_block_level <- as.numeric(names(which.max(
 					  table({{dataset.name}}[[.bsky_block_terms[1]]])
 					)))
-					BSkyFormat(" ")
 					cat(sprintf(
 					  "\nBuilding optimization-ready companion lm: block fixed at level %g (most frequent).\n",
 					  .bsky_optim_block_level
@@ -2036,7 +1947,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 				# No block terms — the existing _lm_ companion is already optimization-ready
 				cat("\nNOTE: No block terms detected in the model.\n")
 				cat("The companion lm model '{{selected.modelname | safe}}_lm_{{dataset.name}}'\n")
-				cat("is already suitable for use with Response Optimization menus (MODEL EVALUATION > Response Optimizer) and for diagnostics (predict, add statistics, etc under MODEL EVALUATION) or inference.\n\n")
+				cat("is already suitable for use with Response Optimization menus (MODEL EVALUATION > Response Optimizer) and for diagnostics (predict, add statistics, etc under MODEL EVALUATION) or inference .\n\n")
 			  }
 		 {{/if}}
     }
@@ -2158,7 +2069,13 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
   ".bsky_companion_fmla", ".bsky_companion_call", ".bsky_lm_companion",
 	  ".bsky_optim_numeric_tlabs", ".bsky_optim_fmla", ".bsky_optim_call",
 	  ".bsky_lm_optim", ".bsky_optim_block_level", ".bsky_block_contribution", ".bv",
-	  "bsky_resids"
+	  "bsky_resids",
+	  ".bsky_force_keep_vars_raw", ".bsky_force_keep_vars", ".bsky_force_keep_invalid",
+	  ".bsky_force_keep_missing", ".bsky_force_keep_retained",
+	  ".bsky_build_reduced_rsm", ".bsky_model_stat_bundle", ".bsky_stat_order",
+	  ".bsky_unconstrained_build", ".bsky_unconstrained_stats",
+	  ".bsky_forced_tlabs", ".bsky_forced_build", ".bsky_forced_stats",
+	  ".bsky_compare", ".bsky_compare_title", ".bsky_final_r2", ".bsky_final_r2pred"
 	)
 	for (.bsky_v in bsky_rsm_cleanup_vars)
 	  if (exists(.bsky_v, envir = .GlobalEnv)) rm(list = .bsky_v, envir = .GlobalEnv)
@@ -2468,6 +2385,23 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     h: 6,
                 })
             },
+            forceKeepVars: {
+                el: new dstVariableList(config, {
+                    label: RSMFormula.t('forceKeepVars'),
+                    no: "forceKeepVars",
+                    filter: "Numeric|Scale",
+                    extraction: "NoPrefix|UseComma|Enclosed",
+                    required: false,
+                    style: "ml-4 mt-2 mb-1",
+                }), r: ['{{ var | safe}}']
+            },
+            forceKeepVarsNote: {
+                el: new labelVar(config, {
+                    label: RSMFormula.t('forceKeepVarsNote'),
+                    style: "ml-4 mt-0 mb-3",
+                    h: 6,
+                })
+            },
         };
         const content = {
             left: [objects.content_var.el.content],
@@ -2490,6 +2424,8 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 					objects.alphaRemove.el.content,
 					objects.hierarchyChk.el.content,
 					objects.showStepDetailChk.el.content,
+					objects.forceKeepVars.el.content,
+					objects.forceKeepVarsNote.el.content,
 					objects.stepwiseNote.el.content,
 					
 					objects.showResidualPlotsChk.el.content, 
