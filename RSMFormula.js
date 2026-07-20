@@ -1524,7 +1524,57 @@ if (!is.null(.bsky_canonical))
 #Display Contour(Plots)
 BSkyFormat("Display Contour(Plots)")
 par(mfrow=c(1,1))
-if({{selected.generateContourPlotChk | safe}}) graphics::contour({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image=TRUE, at=summary({{selected.modelname | safe}}\$canonical$xs))
+
+# ── Optional: percentage-threshold-based highlight color for the contour plot ──
+# rsm::contour.lm() (dispatched via graphics::contour() on an rsm/lm object)
+# accepts an img.col argument — a vector of colors that image() maps
+# linearly across the plotted response range. Cutting that color vector at
+# position round(n_colors * pct/100) is therefore equivalent to cutting the
+# VALUE range at that same percentage, letting us paint one side of a
+# percentage threshold with a single highlight color.
+.bsky_contour_image_col <- grDevices::terrain.colors(50)  # rsm::contour.lm default
+
+if ({{selected.generateContourPlotChk | safe}} && {{selected.colorThresholdChk | safe}}) {
+
+  .bsky_ct_pct   <- suppressWarnings(as.numeric('{{selected.colorThresholdPct | safe}}'))
+  .bsky_ct_color <- '{{selected.colorThresholdColor | safe}}'
+  .bsky_ct_above <- {{selected.colorThresholdDirectionChk | safe}}
+
+  # Validate the color name; fall back to "green" with a note if not recognized
+  if (!(.bsky_ct_color %in% grDevices::colors())) {
+    cat("NOTE: '", .bsky_ct_color, "' is not a recognized R color name — using 'green' instead.\n", sep = "")
+    .bsky_ct_color <- "green"
+  }
+  # Validate/clamp the threshold percentage to a sane 1-99 range
+  if (is.na(.bsky_ct_pct) || .bsky_ct_pct <= 0 || .bsky_ct_pct >= 100) {
+    cat("NOTE: Color threshold percentage must be between 1 and 99 — using 80 instead.\n")
+    .bsky_ct_pct <- 80
+  }
+
+  .bsky_ct_n_colors <- 50
+  .bsky_ct_cut_pos  <- max(1, min(.bsky_ct_n_colors - 1,
+                                  round(.bsky_ct_n_colors * .bsky_ct_pct / 100)))
+  .bsky_ct_base_pal <- grDevices::terrain.colors(.bsky_ct_n_colors)
+
+  .bsky_contour_image_col <- if (.bsky_ct_above) {
+    # Bottom pct% (low response values) keeps the normal gradient;
+    # top (100-pct)% (high response values, ABOVE the threshold) is highlighted
+    c(.bsky_ct_base_pal[seq_len(.bsky_ct_cut_pos)],
+      rep(.bsky_ct_color, .bsky_ct_n_colors - .bsky_ct_cut_pos))
+  } else {
+    # Bottom pct% (low response values, BELOW the threshold) is highlighted;
+    # top (100-pct)% keeps the normal gradient
+    c(rep(.bsky_ct_color, .bsky_ct_cut_pos),
+      .bsky_ct_base_pal[(.bsky_ct_cut_pos + 1):.bsky_ct_n_colors])
+  }
+
+  cat(sprintf(
+    "Contour plot: highlighting response %s the %g%% threshold in '%s'.\n\n",
+    if (.bsky_ct_above) "above" else "below", .bsky_ct_pct, .bsky_ct_color
+  ))
+}
+
+if({{selected.generateContourPlotChk | safe}}) graphics::contour({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image=TRUE, img.col = .bsky_contour_image_col, at=summary({{selected.modelname | safe}}\$canonical$xs))
 
 #Display the Response Surface (Plots)
 BSkyFormat("Display the Response Surface (Plots)")
@@ -2075,7 +2125,9 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 	  ".bsky_build_reduced_rsm", ".bsky_model_stat_bundle", ".bsky_stat_order",
 	  ".bsky_unconstrained_build", ".bsky_unconstrained_stats",
 	  ".bsky_forced_tlabs", ".bsky_forced_build", ".bsky_forced_stats",
-	  ".bsky_compare", ".bsky_compare_title", ".bsky_final_r2", ".bsky_final_r2pred"
+	  ".bsky_compare", ".bsky_compare_title", ".bsky_final_r2", ".bsky_final_r2pred",
+	  ".bsky_contour_image_col", ".bsky_ct_pct", ".bsky_ct_color", ".bsky_ct_above",
+	  ".bsky_ct_n_colors", ".bsky_ct_cut_pos", ".bsky_ct_base_pal"
 	)
 	for (.bsky_v in bsky_rsm_cleanup_vars)
 	  if (exists(.bsky_v, envir = .GlobalEnv)) rm(list = .bsky_v, envir = .GlobalEnv)
@@ -2147,6 +2199,66 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     true_value: "TRUE",
                     false_value: "FALSE",
 					newline: true,
+                })
+            },
+			colorThresholdChk: {
+                el: new checkbox(config, {
+                    label: RSMFormula.t('colorThresholdChk'),
+					no: "colorThresholdChk",
+                    bs_type: "valuebox",
+					style: "ml-4 mt-1",
+                    extraction: "BooleanValue",
+                    true_value: "TRUE",
+                    false_value: "FALSE",
+					state: "",
+					newline: true,
+                })
+            },
+			colorThresholdPct: {
+                el: new input(config, {
+                    no: 'colorThresholdPct',
+                    label: RSMFormula.t('colorThresholdPct'),
+                    placeholder: "e.g., 80",
+                    extraction: "TextAsIs",
+                    value: "80",
+                    required: false,
+                    type: "numeric",
+					allow_spaces: true,
+					style: "ml-5",
+                    width: "w-50",
+                })
+            },
+			colorThresholdDirectionChk: {
+                el: new checkbox(config, {
+                    label: RSMFormula.t('colorThresholdDirectionChk'),
+					no: "colorThresholdDirectionChk",
+                    bs_type: "valuebox",
+					style: "ml-5",
+                    extraction: "BooleanValue",
+                    true_value: "TRUE",
+                    false_value: "FALSE",
+					state: "checked",
+					newline: true,
+                })
+            },
+			colorThresholdColor: {
+                el: new input(config, {
+                    no: 'colorThresholdColor',
+                    label: RSMFormula.t('colorThresholdColor'),
+                    placeholder: "e.g., green, gold, red, blue",
+                    extraction: "TextAsIs",
+                    value: "blue",
+                    required: false,
+					allow_spaces: false,
+					style: "ml-5",
+                    width: "w-50",
+                })
+            },
+			colorThresholdNote: {
+                el: new labelVar(config, {
+                    label: RSMFormula.t('colorThresholdNote'),
+                    style: "ml-5 mt-1 mb-3",
+                    h: 6,
                 })
             },
 			generateRSMPlotChk: {
@@ -2412,6 +2524,11 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 					//objects.independent.el.content, 
 					
 					objects.generateContourPlotChk.el.content,
+					objects.colorThresholdChk.el.content,
+					objects.colorThresholdPct.el.content,
+					objects.colorThresholdDirectionChk.el.content,
+					objects.colorThresholdColor.el.content,
+					objects.colorThresholdNote.el.content,
 					objects.generateRSMPlotChk.el.content, 
 					objects.generatePathSteepestAscentChk.el.content,
 					//objects.steepestHandComputedChk.el.content, 
