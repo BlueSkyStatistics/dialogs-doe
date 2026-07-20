@@ -51,7 +51,8 @@ const nav = {
             "children": [
                 "./createCentralCompositeDesignMixedFactors",
                 "./addRemoveResp",
-                "./addCenterpoint2LevelDesign"						
+                "./addCenterpoint2LevelDesign",
+				"./convertDesignToDataFrame"
             ]
         },
         {
