@@ -36,6 +36,13 @@ const nav = {
             ]
         },
         {
+            "name": "Mixture Design",
+            "icon": "icon-doe",
+            "children": [
+
+            ]
+        },		
+        {
             "name": "Inspect Design",
             "icon": "icon-doe",
             "children": [
