@@ -29,6 +29,12 @@ const nav = {
             ]
         },
         {
+             "id": "menu-doe-mixturedesign",
+            "icon": "icon-doe",
+            "children": [
+            ]
+        },		
+        {
             "id": "menu-doe-inspectdesign",
             "icon": "icon-doe",
             "children": [
