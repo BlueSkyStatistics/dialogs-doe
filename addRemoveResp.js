@@ -39,7 +39,8 @@ class addRemoveResp extends baseModal {
             nav: {
                 name: addRemoveResp.t('navigation'),
                 icon: "icon-doe",
-                modal: config.id
+                modal: config.id,
+                datasetRequired: false
             }
         }
         super(config, objects, content);

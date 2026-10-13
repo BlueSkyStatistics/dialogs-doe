@@ -140,7 +140,8 @@ class createTaguchiParameterDesign extends baseModal {
             nav: {
                 name: createTaguchiParameterDesign.t('navigation'),
                 icon: "icon-doe",
-                modal: config.id
+                modal: config.id,
+                datasetRequired: false
             }
         }
         super(config, objects, content);

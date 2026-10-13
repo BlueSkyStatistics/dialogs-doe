@@ -811,7 +811,8 @@ require(rsm)
             nav: {
                 name: linearRegressionDoE.t('navigation'),
                 icon: "icon-linear_regression_formula",
-                modal: config.id
+                modal: config.id,
+				datasetRequired: false
             }
         };
         super(config, objects, content);

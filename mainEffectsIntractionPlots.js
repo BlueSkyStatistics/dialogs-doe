@@ -62,7 +62,8 @@ class mainEffectsIntractionPlots extends baseModal {
             nav: {
                 name: mainEffectsIntractionPlots.t('navigation'),
                 icon: "icon-doe",
-                modal: config.id
+                modal: config.id,
+                datasetRequired: false
             }
         }
         super(config, objects, content);

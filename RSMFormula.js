@@ -2558,7 +2558,8 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
             nav: {
                 name: RSMFormula.t('navigation'),
                 icon: "icon-doe",
-                modal: config.id
+                modal: config.id,
+                datasetRequired: false
             }
         };
         super(config, objects, content);

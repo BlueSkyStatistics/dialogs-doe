@@ -40,7 +40,8 @@ class plotDesign extends baseModal {
             nav: {
                 name: plotDesign.t('navigation'),
                 icon: "icon-doe",
-                modal: config.id
+                modal: config.id,
+                datasetRequired: false
             }
         }
         super(config, objects, content);
