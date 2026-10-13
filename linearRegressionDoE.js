@@ -869,7 +869,8 @@ require(rsm)
             nav: {
                 name: localization.en.navigation,
                 icon: "icon-linear_regression_formula",
-                modal: config.id
+                modal: config.id,
+				datasetRequired: false
             }
         };
         super(config, objects, content);

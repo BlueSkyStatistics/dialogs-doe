@@ -1855,7 +1855,8 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
             nav: {
                 name: localization.en.navigation,
                 icon: "icon-doe",
-                modal: config.id
+                modal: config.id,
+				datasetRequired: false
             }
         };
         super(config, objects, content);

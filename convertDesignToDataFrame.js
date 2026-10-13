@@ -202,7 +202,7 @@ rm(bsky_conv_raw_name, bsky_conv_target_name, bsky_conv_source_class)
             nav: {
                 name: localization.en.navigation,
                 icon: "icon-convert",
-                datasetRequired: true,
+                datasetRequired: false,
                 modal: config.id
             }
         }

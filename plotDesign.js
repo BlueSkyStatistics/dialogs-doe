@@ -47,7 +47,8 @@ class plotDesign extends baseModal {
             nav: {
                 name: localization.en.navigation,
                 icon: "icon-doe",
-                modal: config.id
+                modal: config.id,
+                datasetRequired: false
             }
         }
         super(config, objects, content);
