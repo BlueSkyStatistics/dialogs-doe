@@ -782,7 +782,7 @@ if ({{selected.stepwiseChk | safe}}) {
     )
 
     # ── Use full-model MSE as the fixed reference variance for all F-tests ──
-    # This matches Minitab's behaviour: every candidate term is evaluated with
+    # Every candidate term is evaluated with
     # an F-statistic whose denominator is the full-model MSE, not the current
     # step's residual MS. Using the null-model variance (what step() does by
     # default) makes the penalty so large that nothing can enter from an
@@ -1516,13 +1516,22 @@ if (!is.null(.bsky_canonical))
              outputTableRenames = c("Stationary point of response surface"))
 
 #Eigenanalysis
-BSkyFormat("Eigen analysis: eigen() decomposition")
-if (!is.null(.bsky_canonical))
-  BSkyFormat(.bsky_canonical\$eigen, outputTableIndex = c(1,2),
-             outputTableRenames = c("Eigen Values", "Eigen Vectors"))
+if (!is.null(.bsky_canonical)) {
+  # BSkyFormat("Eigen analysis: eigen() decomposition") 
+  BSkyFormat("Nature of the Stationary Point (Canonical Analysis)")
+  BSkyFormat(.bsky_canonical\$eigen, outputTableIndex = c(1),
+             outputTableRenames = c("Eigen Values"),
+			repeatAllTableFooter = paste0("Interpretation of the stationary point of the response surface\nAll negative => a maximum\nAll positive => a minimum\nMixed signs => a saddle point or ridge, not a true optimum at all")
+			 )
+ BSkyFormat(.bsky_canonical\$eigen, outputTableIndex = c(2),
+             outputTableRenames = c("Eigen Vectors")
+			 )
+}
 
 #Display Contour(Plots)
+{{if(options.selected.generateContourPlotChk === "TRUE")}}
 BSkyFormat("Display Contour(Plots)")
+{{/if}}
 par(mfrow=c(1,1))
 
 # ── Optional: percentage-threshold-based highlight color for the contour plot ──
@@ -1533,6 +1542,27 @@ par(mfrow=c(1,1))
 # VALUE range at that same percentage, letting us paint one side of a
 # percentage threshold with a single highlight color.
 .bsky_contour_image_col <- grDevices::terrain.colors(50)  # rsm::contour.lm default
+
+# ── Optional: green(good)-to-red(bad) diverging color scale ──────────────
+# The default terrain.colors() palette has no fixed "good/bad" meaning —
+# it runs green-to-white regardless of what the response represents. Some
+# responses (e.g. a distance-to-limit, where bigger is better) are more
+# naturally read against a traffic-light scale where green always means
+# "good" and red always means "bad" — which end that is depends on the
+# response's own direction of improvement, so a direction control is
+# provided rather than assuming higher is always better.
+if ({{selected.generateContourPlotChk | safe}} && {{selected.greenRedScaleChk | safe}}) {
+
+  .bsky_gr_higher_is_better <- {{selected.greenRedDirectionChk | safe}}
+  
+  .bsky_gr_pal <- grDevices::colorRampPalette(c("red", "yellow", "green"))(50)
+  .bsky_contour_image_col <- if (.bsky_gr_higher_is_better) .bsky_gr_pal else rev(.bsky_gr_pal)
+
+  cat(sprintf(
+    "Contour plot: using a green(good)-to-red(bad) color scale, with %s response values shown as green.\n\n",
+    if (.bsky_gr_higher_is_better) "HIGHER" else "LOWER"
+  ))
+}
 
 if ({{selected.generateContourPlotChk | safe}} && {{selected.colorThresholdChk | safe}}) {
 
@@ -1554,7 +1584,11 @@ if ({{selected.generateContourPlotChk | safe}} && {{selected.colorThresholdChk |
   .bsky_ct_n_colors <- 50
   .bsky_ct_cut_pos  <- max(1, min(.bsky_ct_n_colors - 1,
                                   round(.bsky_ct_n_colors * .bsky_ct_pct / 100)))
-  .bsky_ct_base_pal <- grDevices::terrain.colors(.bsky_ct_n_colors)
+  # Build the highlight on top of whichever base palette is already active
+  # (the green-red scale above, if enabled, or the default terrain palette)
+  # rather than hardcoding terrain.colors() again, so the two features
+  # compose correctly when both are used together.
+  .bsky_ct_base_pal <- grDevices::colorRampPalette(.bsky_contour_image_col)(.bsky_ct_n_colors)
 
   .bsky_contour_image_col <- if (.bsky_ct_above) {
     # Bottom pct% (low response values) keeps the normal gradient;
@@ -1574,12 +1608,116 @@ if ({{selected.generateContourPlotChk | safe}} && {{selected.colorThresholdChk |
   ))
 }
 
-if({{selected.generateContourPlotChk | safe}}) graphics::contour({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image=TRUE, img.col = .bsky_contour_image_col, at=summary({{selected.modelname | safe}}\$canonical$xs))
+# ── Hold-point for non-plotted predictors ─────────────────────────────────
+# By default this is the model's own computed stationary point
+# (.bsky_canonical$xs, already computed above) -- exactly the point
+# characterized by the canonical/eigen analysis. Using
+# summary(model$canonical$xs) here previously was incorrect: $canonical
+# is a component of summary(model), not of the model object itself, and
+# summary() on a plain numeric vector returns a 6-number statistical
+# summary rather than the stationary point values -- using .bsky_canonical
+# (already computed and validated earlier in this script) directly instead.
+.bsky_default_hold_at <- if (!is.null(.bsky_canonical)) {
+  .bsky_canonical$xs
+} else {
+  setNames(rep(0, length(bsky_numeric_model_predictors)), bsky_numeric_model_predictors)
+}
+
+# Optional override: specify hold values for the non-plotted predictors
+# manually (e.g. your actual current operating settings) instead of the
+# automatic stationary point.
+.bsky_hold_str <- '{{selected.contourHoldValues | safe}}'
+.bsky_hold_at  <- .bsky_default_hold_at
+if (nchar(trimws(.bsky_hold_str)) > 0) {
+  .bsky_hold_vals <- suppressWarnings(as.numeric(trimws(strsplit(.bsky_hold_str, ",")[[1]])))
+  if (length(.bsky_hold_vals) != length(bsky_numeric_model_predictors) || any(is.na(.bsky_hold_vals))) {
+    cat(sprintf(
+      "NOTE: 'Hold non-plotted predictors at' must have exactly %d comma-separated numbers, one per predictor in this order: %s. Using the model's own stationary point instead.\n\n",
+      length(bsky_numeric_model_predictors), paste(bsky_numeric_model_predictors, collapse = ", ")
+    ))
+  } else {
+    names(.bsky_hold_vals) <- bsky_numeric_model_predictors
+    .bsky_hold_at <- .bsky_hold_vals
+    cat("Using MANUALLY SPECIFIED hold values for non-plotted predictors:\n")
+    for (.bsky_hv in bsky_numeric_model_predictors) {
+      cat(sprintf("  %s: %g\n", .bsky_hv, .bsky_hold_at[.bsky_hv]))
+    }
+    cat("\n")
+  }
+}
+
+# Optional: specific contour line levels, instead of letting R choose
+# automatically. Useful for forcing a line exactly at a spec limit or
+# other value you specifically care about.
+.bsky_contour_levels_str <- '{{selected.contourLevels | safe}}'
+.bsky_contour_levels <- NULL
+if (nchar(trimws(.bsky_contour_levels_str)) > 0) {
+  .bsky_contour_levels <- suppressWarnings(as.numeric(trimws(strsplit(.bsky_contour_levels_str, ",")[[1]])))
+  if (any(is.na(.bsky_contour_levels))) {
+    cat("NOTE: 'Contour line levels' contains a value that could not be read as a number -- using automatic levels instead.\n\n")
+    .bsky_contour_levels <- NULL
+  } else {
+    cat("Using MANUALLY SPECIFIED contour levels:", paste(.bsky_contour_levels, collapse = ", "), "\n\n")
+  }
+}
+
+if({{selected.generateContourPlotChk | safe}}) {
+
+  # ── Diagnostic: report exactly how many predictors/panels are being
+  # requested, and surface any error or warning from the contour() call
+  # explicitly rather than letting it fail or warn silently. With more
+  # than 2 numeric predictors, contour.lm() must draw one panel per pair
+  # (C(k,2) panels total) -- this is printed so a missing plot with many
+  # predictors can be distinguished from a genuine failure. ──
+  .bsky_contour_k <- length(bsky_numeric_model_predictors)
+  .bsky_contour_npanels <- choose(.bsky_contour_k, 2)
+  cat(sprintf(
+    "Contour plot: %d numeric predictor(s) (%s) -- requesting %d panel(s) (one per pair).\n\n",
+    .bsky_contour_k, paste(bsky_numeric_model_predictors, collapse = ", "), .bsky_contour_npanels
+  ))
+
+  .bsky_contour_result <- tryCatch({
+    if (is.null(.bsky_contour_levels)) {
+      graphics::contour({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image=TRUE, img.col = .bsky_contour_image_col, at=.bsky_hold_at)
+    } else {
+      graphics::contour({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image=TRUE, img.col = .bsky_contour_image_col, at=.bsky_hold_at, levels=.bsky_contour_levels)
+    }
+    "OK"
+  }, warning = function(w) {
+    cat(sprintf("WARNING during contour plot: %s\n\n", conditionMessage(w)))
+    "WARNING"
+  }, error = function(e) {
+    cat(sprintf("ERROR: Contour plot could not be produced: %s\n\n", conditionMessage(e)))
+    "ERROR"
+  })
+
+{{if(options.selected.overlayDesignPointsChk === "TRUE")}}
+  # Optional: overlay the actual design points on top of the contour.
+  # Only supported for exactly 2 numeric predictors -- with more than 2,
+  # contour.lm() draws a matrix of one panel per pair, and correctly
+  # overlaying points on every individual panel of that matrix is not
+  # supported here.
+  if ({{selected.overlayDesignPointsChk | safe}} && .bsky_contour_result == "OK") {
+    if (length(bsky_numeric_model_predictors) == 2) {
+      points({{selected.modelname | safe}}$model[[bsky_numeric_model_predictors[1]]],
+             {{selected.modelname | safe}}$model[[bsky_numeric_model_predictors[2]]],
+             pch = 21, bg = "white", col = "red", cex = 1.2, lwd = 1.5)
+    } else {
+      cat(sprintf(
+        "NOTE: Design points overlay is only supported when exactly 2 numeric predictors are plotted -- this model has %d (%s), drawn as a multi-panel matrix where overlaying points on every panel individually is not supported.\n\n",
+        length(bsky_numeric_model_predictors), paste(bsky_numeric_model_predictors, collapse = ", ")
+      ))
+    }
+  }
+ {{/if}}
+}
 
 #Display the Response Surface (Plots)
+{{if(options.selected.generateRSMPlotChk === "TRUE")}}
 BSkyFormat("Display the Response Surface (Plots)")
+{{/if}}
 par(mfrow=c(1,1))
-if({{selected.generateRSMPlotChk | safe}}) suppressWarnings(graphics::persp({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image = TRUE,at = c(summary({{selected.modelname | safe}}\$canonical$xs), Block="B2"),theta=30,zlab="{{selected.dependent | safe}} in MPa",col.lab=33,contour="colors"))
+if({{selected.generateRSMPlotChk | safe}}) suppressWarnings(graphics::persp({{selected.modelname | safe}}, reformulate(bsky_numeric_model_predictors), image = TRUE,at = c(.bsky_hold_at, Block="B2"),theta=30,zlab="{{selected.dependent | safe}} in MPa",col.lab=33,contour="colors"))
 
 #Show Path of steepest ascent from ridge analysis
 if({{selected.generatePathSteepestAscentChk | safe}}) {
@@ -2059,7 +2197,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 	# STEP 5 — Variance Inflation Factors (main effects model)
 	# ════════════════════════════════════════════════════════════════════
 	{{if(options.selected.VIFChk === "TRUE")}}
-		# VIF computed on main effects only model — standard Minitab/JMP convention.
+		# VIF computed on main effects only model — standard convention.
 		# Interaction and quadratic terms are excluded to avoid artificial inflation.
 		# Block terms are included since they are part of the analysis model.
 		tryCatch({
@@ -2084,7 +2222,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 		    )
 		    BSkyFormat(bsky_rsm_vif_df,
 		               singleTableOutputHeader = "Variance Inflation Factors (Main Effects)")
-		    cat("Note: VIF computed on main effects model (Minitab/JMP convention).\n",
+		    cat("Note: VIF computed on main effects model \n",
 		        "      VIF = 1.0 : no collinearity - predictor is orthogonal to all others.\n",
 		        "      VIF > 2   : MODERATE - worth investigating.\n",
 		        "      VIF > 4   : HIGH - collinearity is problematic.\n",
@@ -2127,7 +2265,11 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 	  ".bsky_forced_tlabs", ".bsky_forced_build", ".bsky_forced_stats",
 	  ".bsky_compare", ".bsky_compare_title", ".bsky_final_r2", ".bsky_final_r2pred",
 	  ".bsky_contour_image_col", ".bsky_ct_pct", ".bsky_ct_color", ".bsky_ct_above",
-	  ".bsky_ct_n_colors", ".bsky_ct_cut_pos", ".bsky_ct_base_pal"
+	  ".bsky_ct_n_colors", ".bsky_ct_cut_pos", ".bsky_ct_base_pal",
+	  ".bsky_gr_higher_is_better", ".bsky_gr_pal",
+	  ".bsky_default_hold_at", ".bsky_hold_str", ".bsky_hold_at", ".bsky_hold_vals", ".bsky_hv",
+	  ".bsky_contour_levels_str", ".bsky_contour_levels",
+	  ".bsky_contour_k", ".bsky_contour_npanels", ".bsky_contour_result"
 	)
 	for (.bsky_v in bsky_rsm_cleanup_vars)
 	  if (exists(.bsky_v, envir = .GlobalEnv)) rm(list = .bsky_v, envir = .GlobalEnv)
@@ -2198,6 +2340,70 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
+					newline: true,
+                })
+            },
+			contourHoldValues: {
+                el: new input(config, {
+                    no: 'contourHoldValues',
+                    label: RSMFormula.t('contourHoldValues'),
+					placeholder: "e.g., 25,30,15,400 (leave blank for automatic)",
+					allow_spaces: true,
+                    extraction: "TextAsIs",
+                    value: "",
+                    required: false,
+					style: "ml-4 mt-1",
+                })
+            },
+			contourLevels: {
+                el: new input(config, {
+                    no: 'contourLevels',
+                    label: RSMFormula.t('contourLevels'),
+					placeholder: "e.g., 50,75,100 (leave blank for automatic)",
+					allow_spaces: true,
+                    extraction: "TextAsIs",
+                    value: "",
+                    required: false,
+					style: "ml-4 mt-1",
+                })
+            },
+			overlayDesignPointsChk: {
+                el: new checkbox(config, {
+                    label: RSMFormula.t('overlayDesignPointsChk'),
+					no: "overlayDesignPointsChk",
+                    bs_type: "valuebox",
+					style: "ml-4 mt-1",
+                    extraction: "BooleanValue",
+                    true_value: "TRUE",
+                    false_value: "FALSE",
+					state: "",
+					newline: true,
+                })
+            },
+			greenRedScaleChk: {
+                el: new checkbox(config, {
+                    label: RSMFormula.t('greenRedScaleChk'),
+					no: "greenRedScaleChk",
+                    bs_type: "valuebox",
+					style: "ml-4 mt-1",
+                    extraction: "BooleanValue",
+                    true_value: "TRUE",
+                    false_value: "FALSE",
+					state: "",
+					newline: true,
+                })
+            },
+			greenRedDirectionChk: {
+                el: new checkbox(config, {
+                    label: RSMFormula.t('greenRedDirectionChk'),
+					no: "greenRedDirectionChk",
+                    bs_type: "valuebox",
+					style: "ml-4 mt-1",
+                    extraction: "BooleanValue",
+                    true_value: "TRUE",
+                    false_value: "FALSE",
+					state: "checked",
+					style: "ml-5",
 					newline: true,
                 })
             },
@@ -2524,6 +2730,11 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 					//objects.independent.el.content, 
 					
 					objects.generateContourPlotChk.el.content,
+					objects.contourHoldValues.el.content,
+					objects.contourLevels.el.content,
+					//objects.overlayDesignPointsChk.el.content,
+					objects.greenRedScaleChk.el.content,
+					objects.greenRedDirectionChk.el.content,
 					objects.colorThresholdChk.el.content,
 					objects.colorThresholdPct.el.content,
 					objects.colorThresholdDirectionChk.el.content,
@@ -2559,7 +2770,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                 name: RSMFormula.t('navigation'),
                 icon: "icon-doe",
                 modal: config.id,
-                datasetRequired: false
+				        datasetRequired: false
             }
         };
         super(config, objects, content);
