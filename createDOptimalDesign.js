@@ -82,7 +82,7 @@ class createDOptimalDesign extends baseModal {
 				{{if(options.selected.randomseeds !== "")}} 
 				seed= {{selected.randomseeds | safe}},
 				{{/if}}
-				randomize= {{selected.randomizationChk| safe}} ,
+				randomize= {{selected.randomizationChk| safe}})
 				
 			  BSkyLoadRefresh('{{selected.datasetname | safe}}')  
 
