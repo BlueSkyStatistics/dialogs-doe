@@ -9,7 +9,7 @@ var localization = {
         title: "Convert DoE Design Object to Plain Data Frame",
         navigation: "Convert Design to Data Frame",
 
-        // ── Info label shown at the top of the dialog ───────────────────────
+        // -- Info label shown at the top of the dialog -----------------------
         lblInfo: "Some standard (non-DoE) analysis and graphics menus expect a plain data.frame. A DoE design dataset (class \"design\") carries extra structure — factor level definitions, run order, block/alias information — that most non-DoE menus do not recognize, which can cause errors such as \"Can't reconstruct data frame\" in dplyr-based analyses. This dialog converts the active dataset to a plain data.frame in a NEW dataset, leaving the original design object untouched so DoE menus (Inspect Design, Modify Design, Export Design, CCD augmentation, etc.) continue to work on it normally.",
 
         newDatasetName: "New dataset name (optional)",
@@ -91,18 +91,18 @@ class convertDesignToDataFrame extends baseModal {
             label: localization.en.title,
             modalType: "one",
             RCode: `
-# ════════════════════════════════════════════════════════════════════════════
+# ----------------------------------------------------------------------------
 # Convert DoE Design Object to Plain Data Frame
-# ════════════════════════════════════════════════════════════════════════════
+# ----------------------------------------------------------------------------
 
-# ── Determine target dataset name ──────────────────────────────────────────
+# -- Determine target dataset name ------------------------------------------
 bsky_conv_raw_name <- {{if(options.selected.newDatasetName !== "")}}'{{selected.newDatasetName | safe}}'{{#else}}paste0('{{dataset.name}}', '_df'){{/if}}
 
 # Sanitize to a syntactically valid R object / dataset name
 bsky_conv_target_name <- make.names(bsky_conv_raw_name)
 
 cat(" Convert DoE Design Object to Plain Data Frame\\n")
-cat("══════════════════════════════════════════════════════════════════\\n")
+cat("------------------------------------------------------------------\\n")
 cat(sprintf(" Source dataset : %s\\n", "{{dataset.name}}"))
 
 if (bsky_conv_target_name != bsky_conv_raw_name) {
@@ -110,10 +110,10 @@ if (bsky_conv_target_name != bsky_conv_raw_name) {
                 bsky_conv_raw_name, bsky_conv_target_name))
 }
 
-# ── Check the class of the active dataset ──────────────────────────────────
+# -- Check the class of the active dataset ----------------------------------
 bsky_conv_source_class <- class({{dataset.name}})
 cat(sprintf(" Source class   : %s\\n", paste(bsky_conv_source_class, collapse = ", ")))
-cat("──────────────────────────────────────────────────────────────────\\n")
+cat("------------------------------------------------------------------\\n")
 
 if ("design" %in% bsky_conv_source_class) {
 
@@ -122,7 +122,7 @@ if ("design" %in% bsky_conv_source_class) {
                     bsky_conv_target_name))
     }
 
-    # ── Perform the conversion ────────────────────────────────────────────
+    # -- Perform the conversion --------------------------------------------
     assign(bsky_conv_target_name, as.data.frame({{dataset.name}}), envir = .GlobalEnv)
 
     cat(sprintf(" '%s' is a DoE design object (class: %s).\\n",

@@ -363,7 +363,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 
 						  di <- design.info(design)
 
-						  # ── Step 1: resolve block column name ─────────────────────────────────────
+						  # -- Step 1: resolve block column name -------------------------------------
 						  if (is.null(block_col)) {
 							if (!is.null(di$block.name) && di$block.name %in% colnames(design)) {
 							  block_col <- di$block.name
@@ -392,7 +392,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							return(design)
 						  }
 
-						  # ── Step 2: classify the block column ─────────────────────────────────────
+						  # -- Step 2: classify the block column -------------------------------------
 						  col_raw <- design[[block_col]]
 						  col_num <- suppressWarnings(as.numeric(as.character(col_raw)))
 
@@ -416,7 +416,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							return(design)
 						  }
 
-						  # ── Step 3: classify format and build translation map ─────────────────────
+						  # -- Step 3: classify format and build translation map ---------------------
 						  int_parts     <- floor(col_num)
 						  unique_ints   <- sort(unique(int_parts))      # original block IDs
 						  unique_vals   <- sort(unique(col_num))         # all unique session values
@@ -474,7 +474,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							}
 						  }
 
-						  # ── Step 4: print translation table and model recommendation ──────────────
+						  # -- Step 4: print translation table and model recommendation --------------
 						  if (verbose) {
 							cat("\n")
 							cat("Block column  : '", block_col, "'\n", sep = "")
@@ -557,12 +557,12 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							cat("  original value should be run in the same experimental session.\n\n")
 						  }
 
-						  # ── Step 5: apply column changes (direct assignment only) ─────────────────
+						  # -- Step 5: apply column changes (direct assignment only) -----------------
 						  orig_col_name <- paste0(block_col, ".orig")
 						  design[[orig_col_name]] <- col_raw          # preserves original Factor type
 						  design[[block_col]]     <- new_block_ids    # clean integer IDs
 
-						  # ── Step 6: rebuild desnum ────────────────────────────────────────────────
+						  # -- Step 6: rebuild desnum ------------------------------------------------
 						  tryCatch({
 							factor_cols <- names(di$factor.names)
 							dm_cols <- colnames(design)[colnames(design) %in% c(block_col, factor_cols)]
@@ -579,7 +579,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 									  "). DoE.base will regenerate it automatically.")
 						  })
 
-						  # ── Step 7: update design.info - all five inter-related fields ─────────────
+						  # -- Step 7: update design.info - all five inter-related fields -------------
 						  # After translation the design is a straight blocked design with n_new_blocks
 						  # sequential integer blocks. Setting nruns=total and bbreps=1 means:
 						  #   - detection helpers see rep_scale=1 -> no per-rep division needed
@@ -698,7 +698,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 							stop("ncenter must be integer")
 							
 						  
-						  # ── Pre-process: normalise decimal block encoding ─────────────────────
+						  # -- Pre-process: normalise decimal block encoding ---------------------
 						  if (exists("bsky_normalise_block_encoding")) {
 						    cube <- bsky_normalise_block_encoding(cube, collapse_reps = FALSE, verbose = TRUE)
 						    di <- design.info(cube)
@@ -803,7 +803,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						  # the true factorial count regardless of whether centers already exist.
 						  .bsky_n_original_rows <- nrow(cube) - existing_center_count
 
-						  # ── Helper: backfill Blocks.orig for newly added rows ─────────────
+						  # -- Helper: backfill Blocks.orig for newly added rows -------------
 						  # Rows added by augmentation (centers, axial) get NA in Blocks.orig
 						  # because they were not in the original design. This helper fills
 						  # those NAs using the reverse of the value_map so the experimenter
@@ -1938,7 +1938,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 						  
 						  design.info(design) <- di
 
-						  # ── Correct di$ncube/ncenter/nstar from actual row data ──────────────
+						  # -- Correct di$ncube/ncenter/nstar from actual row data --------------
 						  # Values set above use per-replication or aus-based counts that ignore
 						  # replication in the cube. Recount from the final design data directly.
 						  tryCatch({
