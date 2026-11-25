@@ -43,14 +43,14 @@ bsky_get_numeric_predictors <- function(model, data) {
   fmla <- formula(model)
   resp <- as.character(fmla[[2]])
 
-  # ── Primary path: extract variables from rsm macros ──────────────────────
+  # -- Primary path: extract variables from rsm macros ----------------------
   term_labels <- attr(terms(model), "term.labels")
   rsm_macros  <- c("FO", "SO", "TWI", "PQ", "PE", "CS", "IS", "RS")
   macro_pattern <- paste0("^(", paste(rsm_macros, collapse = "|"), ")\\\\s*\\\\(")
 
   macro_terms <- term_labels[grepl(macro_pattern, term_labels)]
 
-  # ── Block ID heuristic helper ────────────────────────────────────────────
+  # -- Block ID heuristic helper --------------------------------------------
   # Handles numeric, integer, factor, AND character stored block columns.
   # A block ID column is one whose unique values, when converted to numeric,
   # form a consecutive integer sequence starting at 1 (e.g. 1,2,3 or "1","2","3").
@@ -64,7 +64,7 @@ bsky_get_numeric_predictors <- function(model, data) {
       all(uvals == seq_len(n))
   }
 
-  # ── Collect macro vars (always, even in mixed formulas) ──────────────────
+  # -- Collect macro vars (always, even in mixed formulas) ------------------
   macro_vars <- character(0)
   if (length(macro_terms) > 0) {
     macro_vars <- unique(unlist(lapply(macro_terms, function(lab) {
@@ -75,7 +75,7 @@ bsky_get_numeric_predictors <- function(model, data) {
     ]
   }
 
-  # ── Collect plain numeric vars typed OUTSIDE macros ──────────────────────
+  # -- Collect plain numeric vars typed OUTSIDE macros ----------------------
   # Handles mixed formulas like: Temp + Pressure + Pressure:Thinner + SO(Speed,Angle)
   # The macro path finds Speed,Angle but misses Temp, Pressure, Thinner.
   # all.vars() on the whole formula catches all variable names including those
@@ -93,7 +93,7 @@ bsky_get_numeric_predictors <- function(model, data) {
     })
   ]
 
-  # ── Combine macro vars + plain numeric vars ───────────────────────────────
+  # -- Combine macro vars + plain numeric vars -------------------------------
   result <- unique(c(macro_vars, plain_numeric_vars))
   if (length(result) > 0) return(result)
   return(character(0))
@@ -106,7 +106,7 @@ bsky_get_numeric_predictors <- function(model, data) {
 # to determine which predictors are actually numeric.
 
 
-# ── Helper: compute PRESS (leave-one-out prediction error sum of squares) ──
+# -- Helper: compute PRESS (leave-one-out prediction error sum of squares) --
 # Returns NA with a warning for fully saturated models (hat values == 1)
 # to avoid division by zero.
 bsky_rsm_press <- function(model) {
@@ -119,7 +119,7 @@ bsky_rsm_press <- function(model) {
   sum((r / (1 - h))^2)
 }
 
-# ── Helper: compute R-squared predicted from PRESS ──
+# -- Helper: compute R-squared predicted from PRESS --
 bsky_rsm_r2pred <- function(model) {
   press <- bsky_rsm_press(model)
   if (is.na(press)) return(NA_real_)
@@ -127,7 +127,7 @@ bsky_rsm_r2pred <- function(model) {
   1 - press / sst
 }
 
-# ── Helper: compute AICc (corrected AIC for small samples) ──
+# -- Helper: compute AICc (corrected AIC for small samples) --
 bsky_rsm_aicc <- function(model) {
   n   <- length(residuals(model))
   k   <- length(coef(model))
@@ -135,7 +135,7 @@ bsky_rsm_aicc <- function(model) {
   aic + (2 * k * (k + 1)) / (n - k - 1)
 }
 
-# ── Helper: expand an rsm model to a plain lm using its actual fitted terms ──
+# -- Helper: expand an rsm model to a plain lm using its actual fitted terms --
 # step() and stepAIC() cannot expand rsm formula macros (SO, FO, PQ, TWI, PE,
 # CS, IS, RS, etc.) — they must receive a standard lm with individual terms.
 # By the time rsm() has fitted the model, ALL macros are already expanded into
@@ -148,7 +148,7 @@ bsky_rsm_to_lm <- function(rsm_model, dataset) {
   tm        <- terms(rsm_model)
   tlabs_raw <- attr(tm, "term.labels")
 
-  # ── Expand rsm macro labels into individual standard R term strings ──────
+  # -- Expand rsm macro labels into individual standard R term strings ------
   # attr(terms(), "term.labels") returns macro-group labels like
   # "FO(Temp,Pressure,...)", "PQ(Temp,...)", "TWI(Temp,...)" when the formula
   # used rsm macros. Passing these intact to step()/stepAIC() causes whole
@@ -194,7 +194,7 @@ bsky_rsm_to_lm <- function(rsm_model, dataset) {
   # Expand all term labels and flatten to unique individual terms
   tlabs <- unique(unlist(lapply(tlabs_raw, bsky_expand_rsm_macro)))
 
-  # ── Strip covariate terms (block IDs + factor/char columns) ────────────
+  # -- Strip covariate terms (block IDs + factor/char columns) ------------
   # Interactions (x:y) and quadratics (I(x^2)) are always kept.
   # Plain-name terms are stripped if they are factor/character columns OR
   # numeric block ID columns (consecutive integers from 1).
@@ -220,7 +220,7 @@ bsky_rsm_to_lm <- function(rsm_model, dataset) {
   lm(fmla, data = dataset, na.action = na.exclude)
 }
 
-# ── Generic RSM refit function ─────────────────────────────────────────────
+# -- Generic RSM refit function ---------------------------------------------
 # Converts any set of individual term labels (plain names, I(x^2), x:y)
 # back into rsm macros (FO, PQ, TWI) and refits with rsm() so the returned
 # object always has class "rsm". This gives full access to all native RSM
@@ -258,7 +258,7 @@ bsky_refit_as_rsm <- function(term_labels, resp_var, numeric_vars,
   # Resolve the dataset object from its name
   dataset <- get(dataset_name, envir = .GlobalEnv)
 
-  # ── Separate covariate terms from RSM numeric terms ─────────────────────
+  # -- Separate covariate terms from RSM numeric terms ---------------------
   # Layer 1: exclude covariate_terms (block IDs, Paintbox etc.) from RSM terms.
   # Layer 2: fo_vars further restricted to known numeric_vars as safety net.
   rsm_term_labels <- term_labels[
@@ -267,7 +267,7 @@ bsky_refit_as_rsm <- function(term_labels, resp_var, numeric_vars,
      grepl("^I\\\\(", term_labels)
   ]
 
-  # ── Classify RSM terms into FO / PQ / TWI ────────────────────────────────
+  # -- Classify RSM terms into FO / PQ / TWI --------------------------------
   # FO: plain names that are confirmed numeric RSM predictors
   fo_vars_raw <- rsm_term_labels[
     !grepl(":", rsm_term_labels, fixed = TRUE) &
@@ -332,7 +332,7 @@ bsky_refit_as_rsm <- function(term_labels, resp_var, numeric_vars,
     ))
   }
 
-  # ── Build macro formula parts ────────────────────────────────────────────
+  # -- Build macro formula parts --------------------------------------------
   rsm_parts <- character(0)
 
   if (length(fo_vars) > 0)
@@ -351,7 +351,7 @@ bsky_refit_as_rsm <- function(term_labels, resp_var, numeric_vars,
   # These are appended after the macros as plain formula terms
   plain_interaction_parts <- twi_pairs_partial
 
-  # ── Assemble formula ─────────────────────────────────────────────────────
+  # -- Assemble formula -----------------------------------------------------
   # Order: covariate terms | RSM macros | plain partial interactions
   rhs_parts <- unique(c(covariate_terms, rsm_parts, plain_interaction_parts))
 
@@ -365,7 +365,7 @@ bsky_refit_as_rsm <- function(term_labels, resp_var, numeric_vars,
     paste(resp_var, "~", paste(rhs_parts, collapse = " + "))
   )
 
-  # ── Refit with rsm() using eval/call so $call stores the real dataset name ──
+  # -- Refit with rsm() using eval/call so $call stores the real dataset name --
   # Using eval(call("rsm::rsm", ...)) rather than rsm::rsm(...) directly
   # ensures the stored $call shows data = <actual_name> not data = dataset.
   tryCatch({
@@ -395,7 +395,7 @@ bsky_refit_as_rsm <- function(term_labels, resp_var, numeric_vars,
 }
 
 
-# ── Helper: enforce strong heredity ──
+# -- Helper: enforce strong heredity --
 # For every higher-order term in the selected model, ensures all constituent
 # lower-order terms are present. Handles both interaction (A:B) and quadratic
 # (I(x^2)) terms. Returns a formula string ready for rsm() or lm().
@@ -434,9 +434,9 @@ bsky_rsm_enforce_heredity <- function(full_model, reduced_model, response_var) {
   paste(response_var, "~", paste(all_terms, collapse = " + "))
 }
 
-# ════════════════════════════════════════════════════════════════════
+# --------------------------------------------------------------------
 # STEP 1 — Fit the full RSM model and normalise to rsm class
-# ════════════════════════════════════════════════════════════════════
+# --------------------------------------------------------------------
 # First, fit with the user's original formula exactly as specified.
 # Then extract the expanded individual terms and refit via
 # bsky_refit_as_rsm() so the model always carries class "rsm",
@@ -450,7 +450,7 @@ bsky_rsm_enforce_heredity <- function(full_model, reduced_model, response_var) {
   data = {{dataset.name}}
 ))
 
-# ── Derive numeric predictor names from the fitted model ─────────────────────
+# -- Derive numeric predictor names from the fitted model ---------------------
 # Done here (after fitting) so we use the actual model formula and dataset
 # rather than relying on the user to manually list which variables are numeric.
 # bsky_get_numeric_predictors() inspects the formula variables and keeps only
@@ -462,7 +462,7 @@ bsky_rsm_enforce_heredity <- function(full_model, reduced_model, response_var) {
 )
 cat("Numeric RSM predictors identified:", paste(.bsky_num_vars, collapse = ", "), "\n\n")
 
-# ── Force-keep variables: main effects that must never be dropped by stepwise ──
+# -- Force-keep variables: main effects that must never be dropped by stepwise --
 # Validated against the confirmed numeric RSM predictors of the fitted model.
 # Anything selected that is not a genuine numeric RSM predictor (mistyped,
 # a block/categorical covariate, or not actually part of the formula) is
@@ -520,7 +520,7 @@ for (.t in .bsky_full_tlabs_raw) {
 # Keep backward compatibility: .bsky_block_term = first covariate if any
 .bsky_block_term <- if (length(.bsky_covariate_terms) > 0) .bsky_covariate_terms else NULL
 
-# ── Split covariate terms into two groups for stepwise handling ───────────────
+# -- Split covariate terms into two groups for stepwise handling ---------------
 # Block terms (integer columns with consecutive IDs like 1,2,3,...,6) are
 # FORCED into the model at every step — they are structural design terms, not
 # scientifically optional. Categorical covariates (factor/character columns like
@@ -532,7 +532,7 @@ for (.t in .bsky_full_tlabs_raw) {
 for (.ct in .bsky_covariate_terms) {
   .cv <- {{dataset.name}}[[.ct]]
   if (!is.null(.cv)) {
-    # ── Block ID heuristic applied to BOTH factor and numeric columns ────────
+    # -- Block ID heuristic applied to BOTH factor and numeric columns --------
     # DoE design objects store Block.ccd as a factor with levels "1","2",...,"6"
     # (consecutive integer strings). Paintbox/Position have non-integer levels
     # like "Left","Right","Top","Bottom". We detect block columns by testing
@@ -604,9 +604,9 @@ if (!.bsky_has_macros) {
 
 cat("\nFull model class:", class({{selected.modelname | safe}}_full), "\n")
 
-# ════════════════════════════════════════════════════════════════════
+# --------------------------------------------------------------------
 # STEP 2 — Stepwise selection (runs only when the checkbox is ticked)
-# ════════════════════════════════════════════════════════════════════
+# --------------------------------------------------------------------
 if ({{selected.stepwiseChk | safe}}) {
 
   .bsky_method    <- "{{selected.stepwiseMethod | safe}}"
@@ -654,7 +654,7 @@ if ({{selected.stepwiseChk | safe}}) {
   cat(sprintf("  AICc             : %.4f\n", .bsky_full_aicc))
   cat(sprintf("  BIC              : %.4f\n\n", .bsky_full_bic))
 
-  # ── KEY FIX: expand rsm to a plain lm using actual fitted term labels ──
+  # -- KEY FIX: expand rsm to a plain lm using actual fitted term labels --
   # step() and stepAIC() cannot handle rsm macros like SO(); we must pass them
   # a standard lm whose formula uses the already-expanded individual terms.
   .bsky_full_lm <- bsky_rsm_to_lm({{selected.modelname | safe}}_full, {{dataset.name}})
@@ -672,14 +672,14 @@ if ({{selected.stepwiseChk | safe}}) {
     !.bsky_all_terms_ref %in% .bsky_block_terms
   ]
 
-  # ── Run selection ──────────────────────────────────────────────────────────
+  # -- Run selection ----------------------------------------------------------
   if (.bsky_method == "forward_ic") {
 
     require(MASS)
     .bsky_k_ic    <- if (.bsky_criterion == "BIC") log(nrow({{dataset.name}})) else 2
     .bsky_ic_label <- .bsky_criterion   # "AICc" or "BIC" — used in our own trace
 
-    # ── Build the upper scope for stepAIC ────────────────────────────────────
+    # -- Build the upper scope for stepAIC ------------------------------------
     # The scope must include ALL candidate terms: numeric RSM terms AND
     # categorical covariates (Paintbox, Position etc.).
     # Block terms are forced into the lower bound so they are always present.
@@ -706,7 +706,7 @@ if ({{selected.stepwiseChk | safe}}) {
       upper = .bsky_fwdic_upper_fmla
     )
 
-    # ── Run stepAIC with trace=FALSE and print our own step table ──────────
+    # -- Run stepAIC with trace=FALSE and print our own step table ----------
     # stepAIC() hardcodes "AIC" as the column header regardless of the penalty k
     # used. To show the correct criterion label (AICc or BIC) we suppress its
     # built-in trace and reproduce a clean table ourselves at each step.
@@ -744,7 +744,7 @@ if ({{selected.stepwiseChk | safe}}) {
       trace     = FALSE          # suppress built-in AIC-labelled trace
     )
 
-    # ── Reconstruct and print our own step-by-step trace if detail requested ──
+    # -- Reconstruct and print our own step-by-step trace if detail requested --
     if (.bsky_detail) {
       # Walk forward through the terms stepAIC added (skip block terms already forced in)
       .bsky_final_terms <- attr(terms(.bsky_step_lm), "term.labels")
@@ -781,7 +781,7 @@ if ({{selected.stepwiseChk | safe}}) {
       "both"
     )
 
-    # ── Use full-model MSE as the fixed reference variance for all F-tests ──
+    # -- Use full-model MSE as the fixed reference variance for all F-tests --
     # Every candidate term is evaluated with
     # an F-statistic whose denominator is the full-model MSE, not the current
     # step's residual MS. Using the null-model variance (what step() does by
@@ -792,7 +792,7 @@ if ({{selected.stepwiseChk | safe}}) {
     .bsky_all_terms   <- .bsky_all_terms_ref  # already extracted above
     .bsky_resp        <- "{{selected.dependent | safe}}"
 
-    # ── Custom p-value stepwise using full-model MSE as fixed denominator ──
+    # -- Custom p-value stepwise using full-model MSE as fixed denominator --
     bsky_pval_fixed_mse <- function(current_terms, candidate_term,
                                     sigma2_full, df_full, dataset, resp) {
       # F-test for adding candidate_term to current_terms, using sigma2_full as
@@ -832,7 +832,7 @@ if ({{selected.stepwiseChk | safe}}) {
       pf(f_stat, df_diff, df_full, lower.tail = FALSE)
     }
 
-    # ── Identify removable terms: those with no higher-order dependents ──
+    # -- Identify removable terms: those with no higher-order dependents --
     bsky_removable_terms <- function(current_terms) {
       # A term is removable only if no other term in the model requires it
       # for hierarchy. E.g. cannot remove x1 if x1:x2 or I(x1^2) is present.
@@ -851,7 +851,7 @@ if ({{selected.stepwiseChk | safe}}) {
       })
     }
 
-    # ── Main stepwise loop ────────────────────────────────────────────────
+    # -- Main stepwise loop ------------------------------------------------
     # "stepwise" (both) and "backward" start from the FULL candidate set PLUS
     # block terms (which are forced structural and must always remain).
     # "forward" alone starts with block terms only (forced), then adds others.
@@ -873,7 +873,7 @@ if ({{selected.stepwiseChk | safe}}) {
       .bsky_changed    <- FALSE
       .bsky_step_count <- .bsky_step_count + 1
 
-      # ── Backward pass runs FIRST when starting from full model ──
+      # -- Backward pass runs FIRST when starting from full model --
       # For "both" and "backward": remove the least significant term first,
       # then (for "both") check if any previously removed term should re-enter.
       if (.bsky_direction %in% c("both", "backward") && length(.bsky_current_terms) > 0) {
@@ -902,7 +902,7 @@ if ({{selected.stepwiseChk | safe}}) {
         }
       }
 
-      # ── Forward pass: try adding each candidate term ──
+      # -- Forward pass: try adding each candidate term --
       # For "forward" only, or re-entry check in "both" direction.
       if (.bsky_direction %in% c("both", "forward")) {
         .bsky_candidates <- setdiff(.bsky_all_terms, .bsky_current_terms)
@@ -964,7 +964,7 @@ if ({{selected.stepwiseChk | safe}}) {
     }
   }
 
-  # ── Check selection outcome ──────────────────────────────────────────────
+  # -- Check selection outcome ----------------------------------------------
   .bsky_selected_terms <- attr(terms(.bsky_step_lm), "term.labels")
 
   # Detect the three possible outcomes:
@@ -1008,7 +1008,7 @@ if ({{selected.stepwiseChk | safe}}) {
 
   } else {
 
-    # ── Apply heredity enforcement ──────────────────────────────────────────
+    # -- Apply heredity enforcement ------------------------------------------
     .bsky_reduced_formula_str <- bsky_rsm_enforce_heredity(
       .bsky_full_lm, .bsky_step_lm, "{{selected.dependent | safe}}"
     )
@@ -1024,7 +1024,7 @@ if ({{selected.stepwiseChk | safe}}) {
       cat("\nSelected model formula (after heredity enforcement):\n")
       cat(" ", .bsky_reduced_formula_str, "\n\n")
 
-      # ── Refit the reduced model as a proper rsm object ──────────────────
+      # -- Refit the reduced model as a proper rsm object ------------------
       # IMPORTANT: derive term labels from the HEREDITY-ENFORCED formula string,
       # not from .bsky_step_lm which is the pre-heredity stepwise model.
       # bsky_rsm_enforce_heredity() may have added lower-order main effects
@@ -1040,7 +1040,7 @@ if ({{selected.stepwiseChk | safe}}) {
       cat("\nSelected terms (after heredity enforcement, unconstrained search):\n")
       cat(" ", paste(.bsky_reduced_tlabs, collapse = ", "), "\n\n")
 
-      # ── Helper: build covariates + refit a candidate term set as rsm ────────
+      # -- Helper: build covariates + refit a candidate term set as rsm --------
       # Used twice below: once for the unconstrained reduced model, and again
       # for the force-keep-augmented model only if force-keep addition is
       # actually needed. Keeping this logic in one place avoids duplicating
@@ -1071,7 +1071,7 @@ if ({{selected.stepwiseChk | safe}}) {
         list(model = model, final_num_vars = final_num_vars)
       }
 
-      # ── Helper: standard stat bundle used in the comparison table ───────────
+      # -- Helper: standard stat bundle used in the comparison table -----------
       .bsky_model_stat_bundle <- function(model) {
         smry <- suppressMessages(summary(model))
         c(
@@ -1087,12 +1087,12 @@ if ({{selected.stepwiseChk | safe}}) {
       }
       .bsky_stat_order <- c("Terms", "R2", "R2adj", "R2pred", "PRESS", "AIC", "AICc", "BIC")
 
-      # ── Step A: refit the UNCONSTRAINED reduced model (no force-keep applied) ──
+      # -- Step A: refit the UNCONSTRAINED reduced model (no force-keep applied) --
       .bsky_unconstrained_build <- .bsky_build_reduced_rsm(.bsky_reduced_tlabs)
       .bsky_unconstrained_stats <- .bsky_model_stat_bundle(.bsky_unconstrained_build$model)
       cat("Unconstrained reduced model class:", class(.bsky_unconstrained_build$model), "\n\n")
 
-      # ── Step B: post-hoc force-keep check ────────────────────────────────────
+      # -- Step B: post-hoc force-keep check ------------------------------------
       # The stepwise search above ran completely unconstrained — force-keep
       # variables had no special treatment during selection, so no other
       # candidate term's evaluated p-value / IC was distorted by an
@@ -1118,7 +1118,7 @@ if ({{selected.stepwiseChk | safe}}) {
 
       if (length(.bsky_force_keep_missing) == 0) {
 
-        # ── No forcing needed — the unconstrained model IS the final model ────
+        # -- No forcing needed — the unconstrained model IS the final model ----
         {{selected.modelname | safe}} <- .bsky_unconstrained_build$model
         .bsky_final_num_vars          <- .bsky_unconstrained_build$final_num_vars
 
@@ -1137,7 +1137,7 @@ if ({{selected.stepwiseChk | safe}}) {
 
       } else {
 
-        # ── Forcing needed — augment the term set and refit as the FINAL model ──
+        # -- Forcing needed — augment the term set and refit as the FINAL model --
         .bsky_forced_tlabs <- unique(c(.bsky_reduced_tlabs, .bsky_force_keep_missing))
         .bsky_forced_build <- .bsky_build_reduced_rsm(.bsky_forced_tlabs)
         .bsky_forced_stats <- .bsky_model_stat_bundle(.bsky_forced_build$model)
@@ -1148,7 +1148,7 @@ if ({{selected.stepwiseChk | safe}}) {
         cat("Reduced model class (after force-keep addition):",
             class({{selected.modelname | safe}}), "\n\n")
 
-        # ── Three-column comparison: Full | Reduced (unconstrained) | Reduced+Forced ──
+        # -- Three-column comparison: Full | Reduced (unconstrained) | Reduced+Forced --
         # Shown only when at least one force-keep variable actually needed to
         # be added back, so the user can directly see what forcing that
         # variable into the model cost (or gained) relative to what stepwise
@@ -1182,9 +1182,9 @@ if ({{selected.stepwiseChk | safe}}) {
   .bsky_final_num_vars <- .bsky_num_vars
 }
 
-# ════════════════════════════════════════════════════════════════════
+# --------------------------------------------------------------------
 # STEP 3 — Display model summary and coefficients (full or reduced)
-# ════════════════════════════════════════════════════════════════════
+# --------------------------------------------------------------------
 
 # Numeric predictor names for the FINAL model (full or reduced after stepwise).
 # .bsky_final_num_vars is set in each branch above — it contains only the
@@ -1216,7 +1216,7 @@ BSky_RSM_Summary_{{selected.modelname | safe}} = withCallingHandlers(
   }
 )
 
-# ── Helper: compute LOF, canonical, and xs from any lm or rsm object ──────
+# -- Helper: compute LOF, canonical, and xs from any lm or rsm object ------
 # When the model is an rsm object fitted with macros, these are read directly
 # from summary.rsm. When the model is a plain lm (e.g. after stepwise refit
 # without macros, or when user specified a non-macro formula), we compute them
@@ -1231,7 +1231,7 @@ bsky_rsm_lof <- function(model, dataset, resp_var, numeric_vars) {
   # rsm object (which gets it from summary.rsm) or a plain lm (computed here).
   tryCatch({
 
-    # ── Part 1: sequential SS by term ─────────────────────────────────────
+    # -- Part 1: sequential SS by term -------------------------------------
     term_aov   <- anova(model)
     # Drop the Residuals row — we will reattach it as part of Part 2
     resid_row  <- term_aov[nrow(term_aov), , drop = FALSE]
@@ -1242,7 +1242,7 @@ bsky_rsm_lof <- function(model, dataset, resp_var, numeric_vars) {
     term_rows[["F value"]] <- as.numeric(term_rows[["F value"]])
     term_rows[["Pr(>F)"]]  <- as.numeric(term_rows[["Pr(>F)"]])
 
-    # ── Part 2: LOF test rows ──────────────────────────────────────────────
+    # -- Part 2: LOF test rows ----------------------------------------------
     grp <- interaction(
       as.data.frame(lapply(dataset[, numeric_vars, drop = FALSE], round, digits = 8)),
       drop = TRUE
@@ -1265,7 +1265,7 @@ bsky_rsm_lof <- function(model, dataset, resp_var, numeric_vars) {
       check.names = FALSE
     )
 
-    # ── Combine: term rows on top, LOF rows below ──────────────────────────
+    # -- Combine: term rows on top, LOF rows below --------------------------
     full_tbl <- rbind(term_rows, lof_rows)
     full_tbl
 
@@ -1354,7 +1354,7 @@ bsky_rsm_steepest <- function(model, numeric_vars,
     cf_names <- names(cf)
     k        <- length(numeric_vars)
 
-    # ── Extract b (linear) and B (quadratic) from fitted coefficients ──────
+    # -- Extract b (linear) and B (quadratic) from fitted coefficients ------
     b0 <- if ("(Intercept)" %in% cf_names) cf["(Intercept)"] else 0
 
     b <- sapply(numeric_vars, function(v) {
@@ -1402,7 +1402,7 @@ bsky_rsm_steepest <- function(model, numeric_vars,
       return(path)
     }
 
-    # ── Second-order: ridge analysis ────────────────────────────────────────
+    # -- Second-order: ridge analysis ----------------------------------------
     eig_B  <- eigen(B, symmetric = TRUE)
     lam_B  <- eig_B$values   # eigenvalues of B, decreasing order
 
@@ -1454,7 +1454,7 @@ bsky_rsm_steepest <- function(model, numeric_vars,
       }
     }
 
-    # ── Build path table ─────────────────────────────────────────────────────
+    # -- Build path table -----------------------------------------------------
     path_rows <- lapply(dist, function(d) {
       if (d == 0) {
         x_pt <- rep(0, k)
@@ -1492,7 +1492,7 @@ bsky_rsm_steepest <- function(model, numeric_vars,
 
 
 
-# ── Retrieve or compute lof and canonical ───────────────────────────────────
+# -- Retrieve or compute lof and canonical -----------------------------------
 # If the model is a proper rsm object (fitted with macros), use summary.rsm
 # directly. If it is a plain lm (macro-free formula or stepwise lm fallback),
 # compute from first principles so outputs are never NULL.
@@ -1534,7 +1534,7 @@ BSkyFormat("Display Contour(Plots)")
 {{/if}}
 par(mfrow=c(1,1))
 
-# ── Optional: percentage-threshold-based highlight color for the contour plot ──
+# -- Optional: percentage-threshold-based highlight color for the contour plot --
 # rsm::contour.lm() (dispatched via graphics::contour() on an rsm/lm object)
 # accepts an img.col argument — a vector of colors that image() maps
 # linearly across the plotted response range. Cutting that color vector at
@@ -1543,7 +1543,7 @@ par(mfrow=c(1,1))
 # percentage threshold with a single highlight color.
 .bsky_contour_image_col <- grDevices::terrain.colors(50)  # rsm::contour.lm default
 
-# ── Optional: green(good)-to-red(bad) diverging color scale ──────────────
+# -- Optional: green(good)-to-red(bad) diverging color scale --------------
 # The default terrain.colors() palette has no fixed "good/bad" meaning —
 # it runs green-to-white regardless of what the response represents. Some
 # responses (e.g. a distance-to-limit, where bigger is better) are more
@@ -1608,7 +1608,7 @@ if ({{selected.generateContourPlotChk | safe}} && {{selected.colorThresholdChk |
   ))
 }
 
-# ── Hold-point for non-plotted predictors ─────────────────────────────────
+# -- Hold-point for non-plotted predictors ---------------------------------
 # By default this is the model's own computed stationary point
 # (.bsky_canonical$xs, already computed above) -- exactly the point
 # characterized by the canonical/eigen analysis. Using
@@ -1663,12 +1663,12 @@ if (nchar(trimws(.bsky_contour_levels_str)) > 0) {
 
 if({{selected.generateContourPlotChk | safe}}) {
 
-  # ── Diagnostic: report exactly how many predictors/panels are being
+  # -- Diagnostic: report exactly how many predictors/panels are being
   # requested, and surface any error or warning from the contour() call
   # explicitly rather than letting it fail or warn silently. With more
   # than 2 numeric predictors, contour.lm() must draw one panel per pair
   # (C(k,2) panels total) -- this is printed so a missing plot with many
-  # predictors can be distinguished from a genuine failure. ──
+  # predictors can be distinguished from a genuine failure. --
   .bsky_contour_k <- length(bsky_numeric_model_predictors)
   .bsky_contour_npanels <- choose(.bsky_contour_k, 2)
   cat(sprintf(
@@ -1929,7 +1929,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 			bsky_normality_test(dataVar = bsky_resids, dataVarName = "Residuals", Shapiro = {{selected.checkShapiroNormalityTestChk | safe}}, Anderson = {{selected.checkADNormalityTestChk | safe}})
 	{{/if}}
 	
-	# ── Set BlueSky metadata attributes on the final RSM model ──────────────
+	# -- Set BlueSky metadata attributes on the final RSM model --------------
 	# BSkyPredict() and other BlueSky evaluation functions require these custom
 	# attributes to be present on any model object. They are normally attached
 	# when a model is fitted through the BlueSky UI, but must be set explicitly
@@ -1961,7 +1961,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
     # Re-assign model with attributes back to .GlobalEnv
     assign("{{selected.modelname | safe}}_{{dataset.name}}", {{selected.modelname | safe}}, envir = .GlobalEnv)
 
-    # ── Create expanded lm companion model ───────────────────────────────────
+    # -- Create expanded lm companion model -----------------------------------
     # If the final model uses RSM macros (FO, SO, TWI, PQ etc.), create a
     # companion plain lm model named {{selected.modelname | safe}}_lm with all
     # macros expanded to individual terms (Temp, I(Temp^2), Temp:Pressure etc.)
@@ -2047,7 +2047,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 		  cat("with all RSM macros (i.e., FO, TWI, PQ, SO) expanded to individual terms.\n")
 		  cat("Use '{{selected.modelname | safe}}_lm_{{dataset.name}}' model for standard lm-based diagnostics and predictions using analysis menus under MODEL EVALUATION on the top menu bar.\n")
 
-          # ── Create optimization-ready companion lm (block terms absorbed) ────
+          # -- Create optimization-ready companion lm (block terms absorbed) ----
           # Only created when the user checks the option AND block terms exist.
           # Block/structural terms (Block.ccd etc.) are NOT controllable factors
           # and must not be free variables in optim(). The standard practice is
@@ -2145,9 +2145,9 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 	})
 
 	
-	# ════════════════════════════════════════════════════════════════════
+	# --------------------------------------------------------------------
 	# STEP 4 — Observation Diagnostics
-	# ════════════════════════════════════════════════════════════════════
+	# --------------------------------------------------------------------
 	{{if(options.selected.observationDiagnosticsChk === "TRUE")}}
 		# Observation diagnostics table — uses the final RSM model
 		# (full or reduced after stepwise) which includes block and all terms.
@@ -2193,9 +2193,9 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 		})
 	{{/if}}
 
-	# ════════════════════════════════════════════════════════════════════
+	# --------------------------------------------------------------------
 	# STEP 5 — Variance Inflation Factors (main effects model)
-	# ════════════════════════════════════════════════════════════════════
+	# --------------------------------------------------------------------
 	{{if(options.selected.VIFChk === "TRUE")}}
 		# VIF computed on main effects only model — standard convention.
 		# Interaction and quadratic terms are excluded to avoid artificial inflation.

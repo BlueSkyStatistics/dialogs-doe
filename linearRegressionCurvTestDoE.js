@@ -814,7 +814,7 @@ require(car)
 				attr(.GlobalEnv\${{selected.modelname | safe}}_{{dataset.name}},"depVarSample")= sample(bsky_design_{{dataset.name}}_factorial_rows[, c("{{selected.dependent | safe}}")], size = 2, replace = TRUE)
 
 				{{if(options.selected.showParetoPlotsChk === "TRUE" )}}
-						# ── Pareto chart of effects (using the no-block model) ──────────
+						# -- Pareto chart of effects (using the no-block model) ----------
 						# Matches Minitab's switching rule exactly:
 						#   df_error  > 0  -> "Pareto Chart of the Standardized Effects"
 						#                     (|t value|, threshold = t(0.975, df_error))
@@ -829,7 +829,7 @@ require(car)
 
 						if (!is.null(bsky_pareto_df_residual) && bsky_pareto_df_residual > 0) {
 
-							# ── MODE 1: residual df available -> Standardized Effects ──────
+							# -- MODE 1: residual df available -> Standardized Effects ------
 							bsky_pareto_threshold <- qt(0.975, bsky_pareto_df_residual)
 
 							bsky_effects_df <- data.frame(
@@ -848,7 +848,7 @@ require(car)
 
 						} else {
 
-							# ── MODE 2: 0 residual df -> Lenth's PSE (Minitab-matching) ────
+							# -- MODE 2: 0 residual df -> Lenth's PSE (Minitab-matching) ----
 							# Effects are twice the coded coefficients (Minitab convention):
 							# the effect for a factor is the predicted change in mean
 							# response from the low level to the high level.
@@ -1045,7 +1045,7 @@ require(car)
 					{{if (options.selected.MEPlotChk == "TRUE" && options.selected.twoLevelDesignTypeChk =="TRUE")}}
 						BSkyFormat("Main effects plot")
 
-						# ── Parse optional horizontal reference lines ────────────────────────
+						# -- Parse optional horizontal reference lines ------------------------
 						bsky_me_yIntercept  <- NULL
 						bsky_me_hRefLabels  <- NULL
 
@@ -1056,7 +1056,7 @@ require(car)
 						bsky_me_hRefLabels <- c({{selected.MEPlothorizontalLinelabel | safe}})
 						if (length(bsky_me_hRefLabels) == 1 && trimws(bsky_me_hRefLabels) == "") bsky_me_hRefLabels <- NULL
 
-						# ── Build reference line data frame (mirrors MultiVari pattern) ──────
+						# -- Build reference line data frame (mirrors MultiVari pattern) ------
 						bsky_me_ref_df <- NULL
 						if (!is.null(bsky_me_yIntercept)) {
 						  if (!is.null(bsky_me_hRefLabels)) {
@@ -1076,7 +1076,7 @@ require(car)
 						  }
 						}
 
-						# ── Build ggplot main effects plot ───────────────────────────────────
+						# -- Build ggplot main effects plot -----------------------------------
 						# Compute marginal means for each factor at each level
 						bsky_me_data   <- bsky_design_{{dataset.name}}_factorial_rows
 						bsky_me_resp   <- "{{selected.dependent | safe}}"
@@ -1123,7 +1123,7 @@ require(car)
 						    panel.spacing    = unit(0.3, "lines")
 						  )
 
-						# ── Add optional reference lines ─────────────────────────────────────
+						# -- Add optional reference lines -------------------------------------
 						if (!is.null(bsky_me_ref_df)) {
 						  for (bsky_me_i in seq_len(nrow(bsky_me_ref_df))) {
 						    bsky_me_plot <- bsky_me_plot +
