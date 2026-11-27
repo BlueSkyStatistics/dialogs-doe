@@ -95,18 +95,18 @@ class createFullFactorialDesign extends baseModal {
                     max: 9999,
                     step: 1,
                     value: "",
-					style: "ml-5",
+					style: "ms-5",
                 })
             },            
             // lblheading: { el: new labelVar(config, { label: createFullFactorialDesign.t('lblheading'), style: "mt-3",h: 5 }) },
             lbl1: { el: new labelVar(config, { label: createFullFactorialDesign.t('lbl1'), style: "mt-3", h:6 }) },
-            repeatOnlyChk: { el: new checkbox(config, { label: createFullFactorialDesign.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ml-4 mt-1 mb-1", extraction: "Boolean", newline: false }) },
+            repeatOnlyChk: { el: new checkbox(config, { label: createFullFactorialDesign.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ms-4 mt-1 mb-1", extraction: "Boolean", newline: false }) },
             randomizationChk: { 
 				el: new checkbox(config, { 
 					label: createFullFactorialDesign.t('randomizationChk'), 
 					no: "randomizationChk", 
 					state:"checked", 
-					//style: "ml-4 mt-1 mb-1", 
+					//style: "ms-4 mt-1 mb-1", 
 					extraction: "Boolean", 
 					newline: false 
 				}) 

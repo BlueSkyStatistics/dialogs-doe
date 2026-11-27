@@ -103,7 +103,7 @@ class createTaguchiParameterDesign extends baseModal {
 					value: "long", 
 					state: "checked", 
 					extraction: "ValueAsIs", 
-					style: "ml-5",
+					style: "ms-5",
 				}) 
 			},
             directionWiderad: { 
@@ -114,7 +114,7 @@ class createTaguchiParameterDesign extends baseModal {
 					value: "wide", 
 					state: "", 
 					extraction: "ValueAsIs", 
-					style: "ml-5",
+					style: "ms-5",
 				}) 
 			},
 			responses: {

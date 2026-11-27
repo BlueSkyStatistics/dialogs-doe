@@ -136,7 +136,7 @@ class createDOptimalDesign extends baseModal {
                     required: true,
                     extraction: "TextAsIs",
                     value: "Blocks",
-					//style: "ml-5",
+					//style: "ms-5",
 					width: "w-25",
                 })
             },
@@ -157,7 +157,7 @@ class createDOptimalDesign extends baseModal {
                     max: 99999,
                     step: 1,
                     value: "",
-					style: "ml-5",
+					style: "ms-5",
                 })
             },            
 			randomizationChk: { 
@@ -167,7 +167,7 @@ class createDOptimalDesign extends baseModal {
 					extraction: "Boolean", 
 					state: "checked",
 					newline: true,
-					//style: "ml-5",
+					//style: "ms-5",
 				}) 
 			},
         }

@@ -133,7 +133,7 @@ class createOrthogonalArrayDesign extends baseModal {
                     max: 99999,
                     step: 1,
                     value: "",
-					style: "ml-5",
+					style: "ms-5",
                 })
             },  
 			designnamefromcatlg: {
@@ -161,12 +161,12 @@ class createOrthogonalArrayDesign extends baseModal {
             // lblheading: { el: new labelVar(config, { label: createOrthogonalArrayDesign.t('lblheading'), style: "mt-3",h: 5 }) },
             lbl1: { el: new labelVar(config, { label: createOrthogonalArrayDesign.t('lbl1'), style: "mt-3",h: 6 }) },
            
-            repeatOnlyChk: { el: new checkbox(config, { label: createOrthogonalArrayDesign.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ml-5", extraction: "Boolean", newline: false }) },
+            repeatOnlyChk: { el: new checkbox(config, { label: createOrthogonalArrayDesign.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ms-5", extraction: "Boolean", newline: false }) },
             randomizationChk: { 
 				el: new checkbox(config, { 
 					label: createOrthogonalArrayDesign.t('randomizationChk'), 
 					no: "randomizationChk", 
-					//style: "ml-5", 
+					//style: "ms-5", 
 					state: "checked", 
 					extraction: "Boolean", 
 					newline: false 

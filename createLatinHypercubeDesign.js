@@ -92,7 +92,7 @@ class createLatinHypercubeDesign extends baseModal {
                     max: 99999,
                     step: 1,
                     value: "",
-					style: "ml-5",
+					style: "ms-5",
                 })
             },       
             /* lhsDesignType: {
@@ -136,7 +136,7 @@ class createLatinHypercubeDesign extends baseModal {
 					extraction: "Boolean", 
 					state: "checked",
 					newline: true,
-					//style: "ml-5",
+					//style: "ms-5",
 				}) 
 			},
         }

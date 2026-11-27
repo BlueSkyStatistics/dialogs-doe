@@ -81,7 +81,7 @@ class addCenterpoint2LevelDesign extends baseModal {
                     max: 9999,
                     step: 1,
                     value: 0,
-					//style: "ml-4",
+					//style: "ms-4",
 					width:"w-25",
                 })
             },         

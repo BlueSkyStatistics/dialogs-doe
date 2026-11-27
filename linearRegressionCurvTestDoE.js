@@ -1327,7 +1327,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                 el: new checkbox(config, {
                     label: linearRegressionCurvTestDoE.t('axialCenterPointRowsChk'),
                     no: "axialCenterPointRowsChk",
-                    //style: "ml-5",
+                    //style: "ms-5",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -1400,7 +1400,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                 el: new checkbox(config, {
                     label: linearRegressionCurvTestDoE.t('AliasChk'),
                     no: "AliasChk",
-                    style: "ml-4 mt-2",
+                    style: "ms-4 mt-2",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -1412,7 +1412,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                 el: new checkbox(config, {
                     label: linearRegressionCurvTestDoE.t('AliasCodedChk'),
                     no: "AliasCodedChk",
-                    style: "ml-5 mb-2",
+                    style: "ms-5 mb-2",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -1424,7 +1424,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                 el: new checkbox(config, {
                     label: linearRegressionCurvTestDoE.t('DanielplotChk'),
                     no: "DanielplotChk",
-                    style: "ml-4 mt-2",
+                    style: "ms-4 mt-2",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -1436,7 +1436,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                 el: new checkbox(config, {
                     label: linearRegressionCurvTestDoE.t('DanielplotCodeChk'),
                     no: "DanielplotCodeChk",
-                    style: "ml-5",
+                    style: "ms-5",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -1448,7 +1448,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                 el: new checkbox(config, {
                     label: linearRegressionCurvTestDoE.t('DanielplotHalfChk'),
                     no: "DanielplotHalfChk",
-                    style: "ml-5",
+                    style: "ms-5",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -1465,7 +1465,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                     type: "numeric",
                     extraction: "TextAsIs",
                     value: "0.5",
-					style: "ml-5 mb-2",
+					style: "ms-5 mb-2",
 					width: "w-25",
 					newline: true,
                 })
@@ -1474,7 +1474,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                 el: new checkbox(config, {
                     label: linearRegressionCurvTestDoE.t('MEPlotChk'),
                     no: "MEPlotChk",
-                    style: "ml-4 mb-2",
+                    style: "ms-4 mb-2",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -1485,7 +1485,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
             MEPlotRefLineSectionLbl: {
                 el: new labelVar(config, {
                     label: linearRegressionCurvTestDoE.t('MEPlotRefLineSectionLbl'),
-                    style: "ml-5",
+                    style: "ms-5",
                     h: 6,
                 })
             },
@@ -1497,7 +1497,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                     enforceRobjectRules: false,
                     width: "w-50",
                     extraction: "TextAsIs",
-                    style: "ml-5",
+                    style: "ms-5",
                     value: ""
                 })
             },
@@ -1508,7 +1508,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                     placeholder: "",
                     required: false,
                     type: "character",
-                    style: "ml-5 mb-2",
+                    style: "ms-5 mb-2",
                     extraction: "CreateArray",
                     allow_spaces: true,
 					width: "w-50",
@@ -1518,7 +1518,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                 el: new checkbox(config, {
                     label: linearRegressionCurvTestDoE.t('IAPlotChk'),
                     no: "IAPlotChk",
-                    style: "ml-4 mt-2",
+                    style: "ms-4 mt-2",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -1530,7 +1530,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                 el: new checkbox(config, {
                     label: linearRegressionCurvTestDoE.t('IAPlotShowAliasChk'),
                     no: "IAPlotShowAliasChk",
-                    style: "ml-5 mb-2",
+                    style: "ms-5 mb-2",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -1542,7 +1542,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                 el: new checkbox(config, {
                     label: linearRegressionCurvTestDoE.t('cubePlotChk'),
                     no: "cubePlotChk",
-                    style: "ml-4 mt-2 mb-1",
+                    style: "ms-4 mt-2 mb-1",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -1554,7 +1554,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                 el: new checkbox(config, {
                     label: linearRegressionCurvTestDoE.t('cubePlotModelMeanChk'),
                     no: "cubePlotModelMeanChk",
-                    style: "ml-5 mb-1",
+                    style: "ms-5 mb-1",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -1593,7 +1593,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
 					no: "showParetoPlotsChk",
                     bs_type: "valuebox",
                     style: "mt-2 mb-2",
-					//style: "ml-5",
+					//style: "ms-5",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -1632,7 +1632,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
 					no: "checkShapiroNormalityTestChk",
                     bs_type: "valuebox",
                     //style: "mt-2 mb-3",
-					style: "ml-5",
+					style: "ms-5",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -1645,7 +1645,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
 					no: "checkADNormalityTestChk",
                     bs_type: "valuebox",
                     //style: "mt-2 mb-3",
-					style: "ml-5",
+					style: "ms-5",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -1670,8 +1670,8 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                     label: linearRegressionCurvTestDoE.t('flipaxisPPplotChk'), 
 					no: "flipaxisPPplotChk",
                     bs_type: "valuebox",
-                    //style: "ml-3 mb-3",
-					style: "ml-5",
+                    //style: "ms-3 mb-3",
+					style: "ms-5",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -1687,7 +1687,7 @@ if(exists('bsky_anova_table_with_curvature_test')) rm(bsky_anova_table_with_curv
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
-					style: "ml-5",
+					style: "ms-5",
 					newline: true,
                 })
             },

@@ -108,7 +108,7 @@ class create2LevelDesign extends baseModal {
                     max: 9999,
                     step: 1,
                     value: 2,
-					style: "ml-4 mb-3",
+					style: "ms-4 mb-3",
                 })
             },    
             replications: {
@@ -138,15 +138,15 @@ class create2LevelDesign extends baseModal {
             
 			// lblheading: { el: new labelVar(config, { label: create2LevelDesign.t('lblheading'), style: "mt-3",h: 5 }) },
             lbl1: { el: new labelVar(config, { label: create2LevelDesign.t('lbl1'), style: "mt-3", h:6 }) },
-            taguchiOrderChk: { el: new checkbox(config, { label: create2LevelDesign.t('taguchiOrderChk'), no: "taguchiOrderChk",  style: "ml-4 mt-1 mb-2", extraction: "Boolean", newline: true }) },
-            repeatOnlyChk: { el: new checkbox(config, { label: create2LevelDesign.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ml-4 mt-1 mb-1", extraction: "Boolean", newline: false }) },
+            taguchiOrderChk: { el: new checkbox(config, { label: create2LevelDesign.t('taguchiOrderChk'), no: "taguchiOrderChk",  style: "ms-4 mt-1 mb-2", extraction: "Boolean", newline: true }) },
+            repeatOnlyChk: { el: new checkbox(config, { label: create2LevelDesign.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ms-4 mt-1 mb-1", extraction: "Boolean", newline: false }) },
             
 			randomizationChk: { 
 				el: new checkbox(config, { 
 					label: create2LevelDesign.t('randomizationChk'), 
 					no: "randomizationChk", 
 					state:"checked", 
-					//style: "ml-4 mt-1 mb-1", 
+					//style: "ms-4 mt-1 mb-1", 
 					extraction: "Boolean", 
 					newline: false,
 				}) 

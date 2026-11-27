@@ -1977,7 +1977,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
                     placeholder: "orthogonal",
                     allow_spaces:true,
                     extraction: "NoPrefix|UseComma",
-					style: "ml-5",
+					style: "ms-5",
                     value: "orthogonal"
                 })
             },                
@@ -1989,7 +1989,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
                     placeholder: "",
                     extraction: "TextAsIs",
                     value: "4, 0",
-					//style: "ml-5 mb-1",
+					//style: "ms-5 mb-1",
                 })
             },
 			blockName: {
@@ -2000,7 +2000,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
                     //required: true,
                     extraction: "TextAsIs",
                     value: "Block.ccd",
-					style: "ml-5",
+					style: "ms-5",
 					width: "w-50",
                 })
             },    
@@ -2014,10 +2014,10 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
                     max: 99999,
                     step: 1,
                     value: "",
-					style: "ml-5",
+					style: "ms-5",
                 })
             },            
-            alphalbl: { el: new labelVar(config, { label: createCentralCompositeDesignMixedFactors.t('alphalbl'), style: "mt-3 ml-5",h: 6 }) },
+            alphalbl: { el: new labelVar(config, { label: createCentralCompositeDesignMixedFactors.t('alphalbl'), style: "mt-3 ms-5",h: 6 }) },
             lbl1: { el: new labelVar(config, { label: createCentralCompositeDesignMixedFactors.t('lbl1'), style: "mt-3",h: 6 }) },
 
             randomizationChk: { 
@@ -2027,7 +2027,7 @@ class createCentralCompositeDesignMixedFactors extends baseModal {
 					extraction: "Boolean", 
 					state: "checked",
 					newline: false, 
-					//style: "ml-5",
+					//style: "ms-5",
 				}) 
 			},
         }

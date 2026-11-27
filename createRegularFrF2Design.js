@@ -141,7 +141,7 @@ class createRegularFrF2Design extends baseModal {
                     max: 9999,
                     step: 1,
                     value: 2,
-					style: "ml-5 mb-2",
+					style: "ms-5 mb-2",
                 })
             },    			
             replications: {
@@ -164,7 +164,7 @@ class createRegularFrF2Design extends baseModal {
                     max: 9999,
                     step: 1,
                     value: "",
-					style: "ml-5",
+					style: "ms-5",
                 })
             },     
             roman: {
@@ -187,7 +187,7 @@ class createRegularFrF2Design extends baseModal {
                     placeholder: "",
                     extraction: "TextAsIs",
                     value: "catlg",
-					style: "ml-5",
+					style: "ms-5",
 					disabled: true, 
                 })
             },
@@ -200,7 +200,7 @@ class createRegularFrF2Design extends baseModal {
                     placeholder: "",
                     extraction: "TextAsIs",
                     value: "",
-					style: "ml-5 mb-1",
+					style: "ms-5 mb-1",
 					state: "disabled",
                 })
             },
@@ -211,14 +211,14 @@ class createRegularFrF2Design extends baseModal {
 			lbl3: { el: new labelVar(config, { label: createRegularFrF2Design.t('lbl3'), style: "mt-3",h: 6 }) },
             lbldesignheading: { el: new labelVar(config, { label: createRegularFrF2Design.t('lbldesignheading'), style: "mt-3",h: 5 }) },
             
-            alias2FIsChk: { el: new checkbox(config, { label: createRegularFrF2Design.t('alias2FIsChk'), no: "alias2FIsChk",  style: "ml-5", extraction: "Boolean", newline: false }) },
-            repeatOnlyChk: { el: new checkbox(config, { label: createRegularFrF2Design.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ml-5", extraction: "Boolean", newline: false }) },
+            alias2FIsChk: { el: new checkbox(config, { label: createRegularFrF2Design.t('alias2FIsChk'), no: "alias2FIsChk",  style: "ms-5", extraction: "Boolean", newline: false }) },
+            repeatOnlyChk: { el: new checkbox(config, { label: createRegularFrF2Design.t('repeatOnlyChk'), no: "repeatOnlyChk", style: "ms-5", extraction: "Boolean", newline: false }) },
             
 			randomizationChk: { 
 				el: new checkbox(config, { 
 					label: createRegularFrF2Design.t('randomizationChk'), 
 					no: "randomizationChk", 
-					//style: "ml-5", 
+					//style: "ms-5", 
 					state: "checked", 
 					extraction: "Boolean", 
 					newline: false, 
@@ -237,7 +237,7 @@ class createRegularFrF2Design extends baseModal {
 					newline: false, 
 				}) 
 			},
-			nrunsChk: { el: new checkbox(config, { label: createRegularFrF2Design.t('nrunsChk'), no: "nrunsChk",  style: "mt-5, ml-5", extraction: "Boolean", newline: false }) },
+			nrunsChk: { el: new checkbox(config, { label: createRegularFrF2Design.t('nrunsChk'), no: "nrunsChk",  style: "mt-5, ms-5", extraction: "Boolean", newline: false }) },
 		}
         const content = {
             left: [objects.content_var.el.content],

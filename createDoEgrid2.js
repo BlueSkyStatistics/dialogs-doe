@@ -111,7 +111,7 @@ class createDoEgrid2 extends baseModal {
                     type : "character",
                     extraction: "TextAsIs",
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },       
             numOfFactorLevels1: {
@@ -124,7 +124,7 @@ class createDoEgrid2 extends baseModal {
                     type : "numeric",
                     extraction: "TextAsIs",
                     value: "2",
-					style: "ml-3", 
+					style: "ms-3", 
                 })
             },                 
             factorLevels1: {
@@ -136,7 +136,7 @@ class createDoEgrid2 extends baseModal {
                     extraction: "TextAsIs",
                     allow_spaces:true,
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },
 			prefixForfactorLevels1: {
@@ -149,7 +149,7 @@ class createDoEgrid2 extends baseModal {
                     type : "character",
                     extraction: "TextAsIs",
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },       
 			
@@ -170,7 +170,7 @@ class createDoEgrid2 extends baseModal {
                     type : "character",
                     extraction: "TextAsIs",
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },       
             numOfFactorLevels2: {
@@ -183,7 +183,7 @@ class createDoEgrid2 extends baseModal {
                     type : "numeric",
                     extraction: "TextAsIs",
                     value: "2",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },                 
             factorLevels2: {
@@ -195,7 +195,7 @@ class createDoEgrid2 extends baseModal {
                     extraction: "TextAsIs",
                     allow_spaces:true,
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },
 			prefixForfactorLevels2: {
@@ -208,7 +208,7 @@ class createDoEgrid2 extends baseModal {
                     type : "character",
                     extraction: "TextAsIs",
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },       
 			
@@ -229,7 +229,7 @@ class createDoEgrid2 extends baseModal {
                     type : "character",
                     extraction: "TextAsIs",
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },       
             numOfFactorLevels3: {
@@ -242,7 +242,7 @@ class createDoEgrid2 extends baseModal {
                     type : "numeric",
                     extraction: "TextAsIs",
                     value: "2",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },                 
             factorLevels3: {
@@ -254,7 +254,7 @@ class createDoEgrid2 extends baseModal {
                     extraction: "TextAsIs",
                     allow_spaces:true,
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },
 			prefixForfactorLevels3: {
@@ -267,7 +267,7 @@ class createDoEgrid2 extends baseModal {
                     type : "character",
                     extraction: "TextAsIs",
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },       
 			
@@ -288,7 +288,7 @@ class createDoEgrid2 extends baseModal {
                     type : "character",
                     extraction: "TextAsIs",
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },       
             numOfFactorLevels4: {
@@ -301,7 +301,7 @@ class createDoEgrid2 extends baseModal {
                     type : "numeric",
                     extraction: "TextAsIs",
                     value: "2",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },                 
             factorLevels4: {
@@ -313,7 +313,7 @@ class createDoEgrid2 extends baseModal {
                     extraction: "TextAsIs",
                     allow_spaces:true,
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },
 			prefixForfactorLevels4: {
@@ -326,7 +326,7 @@ class createDoEgrid2 extends baseModal {
                     type : "character",
                     extraction: "TextAsIs",
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },       
 			
@@ -347,7 +347,7 @@ class createDoEgrid2 extends baseModal {
                     type : "character",
                     extraction: "TextAsIs",
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },       
             numOfFactorLevels5: {
@@ -360,7 +360,7 @@ class createDoEgrid2 extends baseModal {
                     type : "numeric",
                     extraction: "TextAsIs",
                     value: "2",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },                 
             factorLevels5: {
@@ -372,7 +372,7 @@ class createDoEgrid2 extends baseModal {
                     extraction: "TextAsIs",
                     allow_spaces:true,
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },
 			prefixForfactorLevels5: {
@@ -385,7 +385,7 @@ class createDoEgrid2 extends baseModal {
                     type : "character",
                     extraction: "TextAsIs",
                     value: "",
-					style: "ml-3",
+					style: "ms-3",
                 })
             },       
 			

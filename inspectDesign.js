@@ -334,7 +334,7 @@ class inspectDesign extends baseModal {
                 el: new checkbox(config, {
                     label: inspectDesign.t('responseVariablesChk'),
                     no: "responseVariablesChk",
-                    //style: "ml-5",
+                    //style: "ms-5",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -347,7 +347,7 @@ class inspectDesign extends baseModal {
                 el: new checkbox(config, {
                     label: inspectDesign.t('axialCenterPointRowsChk'),
                     no: "axialCenterPointRowsChk",
-                    //style: "ml-5",
+                    //style: "ms-5",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -364,7 +364,7 @@ class inspectDesign extends baseModal {
                 el: new checkbox(config, {
                     label: inspectDesign.t('summarizeBriefChk'),
                     no: "summarizeBriefChk",
-                    //style: "ml-5",
+                    //style: "ms-5",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -376,7 +376,7 @@ class inspectDesign extends baseModal {
                 el: new checkbox(config, {
                     label: inspectDesign.t('summarizeDetailsChk'),
                     no: "summarizeDetailsChk",
-                   // style: "ml-5",
+                   // style: "ms-5",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -388,7 +388,7 @@ class inspectDesign extends baseModal {
                 el: new checkbox(config, {
                     label: inspectDesign.t('printDesignChk'),
                     no: "printDesignChk",
-                   // style: "ml-5",
+                   // style: "ms-5",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -400,7 +400,7 @@ class inspectDesign extends baseModal {
                 el: new checkbox(config, {
                     label: inspectDesign.t('printDesignWithRunOrderChk'),
                     no: "printDesignWithRunOrderChk",
-                    style: "ml-5",
+                    style: "ms-5",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
@@ -414,7 +414,7 @@ class inspectDesign extends baseModal {
                 el: new checkbox(config, {
                     label: inspectDesign.t('designinfoChk'),
                     no: "designinfoChk",
-                    //style: "ml-5",
+                    //style: "ms-5",
                     bs_type: "valuebox",
                     extraction: "BooleanValue",
                     true_value: "TRUE",

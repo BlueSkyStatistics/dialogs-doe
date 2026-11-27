@@ -2313,7 +2313,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 			formulaboxhint: { 
 				el: new labelVar(config, { 
 					label: RSMFormula.t('formulaboxhint'), 
-					style: "ml-5 mb-3", 
+					style: "ms-5 mb-3", 
 					h: 6,
 				}) 
 			},
@@ -2352,7 +2352,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     extraction: "TextAsIs",
                     value: "",
                     required: false,
-					style: "ml-4 mt-1",
+					style: "ms-4 mt-1",
                 })
             },
 			contourLevels: {
@@ -2364,7 +2364,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     extraction: "TextAsIs",
                     value: "",
                     required: false,
-					style: "ml-4 mt-1",
+					style: "ms-4 mt-1",
                 })
             },
 			overlayDesignPointsChk: {
@@ -2372,7 +2372,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     label: RSMFormula.t('overlayDesignPointsChk'),
 					no: "overlayDesignPointsChk",
                     bs_type: "valuebox",
-					style: "ml-4 mt-1",
+					style: "ms-4 mt-1",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -2385,7 +2385,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     label: RSMFormula.t('greenRedScaleChk'),
 					no: "greenRedScaleChk",
                     bs_type: "valuebox",
-					style: "ml-4 mt-1",
+					style: "ms-4 mt-1",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -2398,12 +2398,12 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     label: RSMFormula.t('greenRedDirectionChk'),
 					no: "greenRedDirectionChk",
                     bs_type: "valuebox",
-					style: "ml-4 mt-1",
+					style: "ms-4 mt-1",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
 					state: "checked",
-					style: "ml-5",
+					style: "ms-5",
 					newline: true,
                 })
             },
@@ -2412,7 +2412,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     label: RSMFormula.t('colorThresholdChk'),
 					no: "colorThresholdChk",
                     bs_type: "valuebox",
-					style: "ml-4 mt-1",
+					style: "ms-4 mt-1",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -2430,7 +2430,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     required: false,
                     type: "numeric",
 					allow_spaces: true,
-					style: "ml-5",
+					style: "ms-5",
                     width: "w-50",
                 })
             },
@@ -2439,7 +2439,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     label: RSMFormula.t('colorThresholdDirectionChk'),
 					no: "colorThresholdDirectionChk",
                     bs_type: "valuebox",
-					style: "ml-5",
+					style: "ms-5",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -2456,14 +2456,14 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     value: "blue",
                     required: false,
 					allow_spaces: false,
-					style: "ml-5",
+					style: "ms-5",
                     width: "w-50",
                 })
             },
 			colorThresholdNote: {
                 el: new labelVar(config, {
                     label: RSMFormula.t('colorThresholdNote'),
-                    style: "ml-5 mt-1 mb-3",
+                    style: "ms-5 mt-1 mb-3",
                     h: 6,
                 })
             },
@@ -2496,7 +2496,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     label: RSMFormula.t('steepestHandComputedChk'),
                     no: "steepestHandComputedChk",
                     bs_type: "valuebox",
-                    style: "ml-4 mt-1 mb-3",
+                    style: "ms-4 mt-1 mb-3",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -2523,7 +2523,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 					no: "checkShapiroNormalityTestChk",
                     bs_type: "valuebox",
                     //style: "mt-2 mb-3",
-					style: "ml-5",
+					style: "ms-5",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -2536,7 +2536,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
 					no: "checkADNormalityTestChk",
                     bs_type: "valuebox",
                     //style: "mt-2 mb-3",
-					style: "ml-5",
+					style: "ms-5",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -2561,8 +2561,8 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     label: RSMFormula.t('flipaxisPPplotChk'), 
 					no: "flipaxisPPplotChk",
                     bs_type: "valuebox",
-                    //style: "ml-3 mb-3",
-					style: "ml-5",
+                    //style: "ms-3 mb-3",
+					style: "ms-5",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -2578,7 +2578,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
-					style: "ml-5",
+					style: "ms-5",
 					newline: true,
                 })
             },
@@ -2632,7 +2632,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     label: RSMFormula.t('stepwiseMethodLbl'),
                     multiple: false,
                     extraction: "NoPrefix|UseComma",
-                    style: "ml-4 mt-1 mb-1",
+                    style: "ms-4 mt-1 mb-1",
                     options: ["stepwise", "forward", "backward", "forward_ic"],
                     default: "stepwise",
                 })
@@ -2643,7 +2643,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     label: RSMFormula.t('stepwiseCriterionLbl'),
                     multiple: false,
                     extraction: "NoPrefix|UseComma",
-                    style: "ml-4 mt-1 mb-1",
+                    style: "ms-4 mt-1 mb-1",
                     options: ["AICc", "BIC"],
                     default: "AICc",
                 })
@@ -2655,7 +2655,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     placeholder: "0.15",
                     allow_spaces: true,
                     extraction: "TextAsIs",
-                    style: "ml-4 mt-1 mb-1",
+                    style: "ms-4 mt-1 mb-1",
                     value: "0.15",
                 })
             },
@@ -2666,7 +2666,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     placeholder: "0.15",
                     allow_spaces: true,
                     extraction: "TextAsIs",
-                    style: "ml-4 mt-1 mb-1",
+                    style: "ms-4 mt-1 mb-1",
                     value: "0.15",
                 })
             },
@@ -2675,7 +2675,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     label: RSMFormula.t('hierarchyChk'),
                     no: "hierarchyChk",
                     bs_type: "valuebox",
-                    style: "ml-4 mt-1 mb-1",
+                    style: "ms-4 mt-1 mb-1",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -2688,7 +2688,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     label: RSMFormula.t('showStepDetailChk'),
                     no: "showStepDetailChk",
                     bs_type: "valuebox",
-                    style: "ml-4 mt-1 mb-1",
+                    style: "ms-4 mt-1 mb-1",
                     extraction: "BooleanValue",
                     true_value: "TRUE",
                     false_value: "FALSE",
@@ -2699,7 +2699,7 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
             stepwiseNote: {
                 el: new labelVar(config, {
                     label: RSMFormula.t('stepwiseNote'),
-                    style: "ml-4 mt-2 mb-3",
+                    style: "ms-4 mt-2 mb-3",
                     h: 6,
                 })
             },
@@ -2710,13 +2710,13 @@ if (FALSE) { # meant to check whether steepestHandComputedChk is checked to show
                     filter: "Numeric|Scale",
                     extraction: "NoPrefix|UseComma|Enclosed",
                     required: false,
-                    style: "ml-4 mt-2 mb-1",
+                    style: "ms-4 mt-2 mb-1",
                 }), r: ['{{ var | safe}}']
             },
             forceKeepVarsNote: {
                 el: new labelVar(config, {
                     label: RSMFormula.t('forceKeepVarsNote'),
-                    style: "ml-4 mt-0 mb-3",
+                    style: "ms-4 mt-0 mb-3",
                     h: 6,
                 })
             },

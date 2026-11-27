@@ -83,7 +83,7 @@ class createCentralCompositeDesign extends baseModal {
                     placeholder: "",
                     extraction: "TextAsIs",
                     value: "4",
-					//style: "ml-5 mb-1",
+					//style: "ms-5 mb-1",
                 })
             },
 			blockName: {
@@ -94,7 +94,7 @@ class createCentralCompositeDesign extends baseModal {
                     //required: true,
                     extraction: "TextAsIs",
                     value: "Block.ccd",
-					//style: "ml-5",
+					//style: "ms-5",
 					width: "w-50",
                 })
             },    
@@ -107,7 +107,7 @@ class createCentralCompositeDesign extends baseModal {
                     max: 99999,
                     step: 1,
                     value: "",
-					style: "ml-5",
+					style: "ms-5",
                 })
             },            
             // lblheading: { el: new labelVar(config, { label: createCentralCompositeDesign.t('lblheading'), style: "mt-3",h: 5 }) },
@@ -120,7 +120,7 @@ class createCentralCompositeDesign extends baseModal {
 					extraction: "Boolean", 
 					state: "checked",
 					newline: false, 
-					//style: "ml-5",
+					//style: "ms-5",
 				}) 
 			},
         }
